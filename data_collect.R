@@ -9,28 +9,7 @@ library(dplyr)
 ##==========================================================================================================================================
 ##==========================================================================================================================================
 
-# vefmap_cpue <- fetch_cpue(2)
-# 
-# # filter this down to a single system and species prior to downloading data
-# sites = c(1246,1247,1248,1250,1251,1253,1255,1256,1257,4063,4064,4065,4266,1521,1523,1524,1525)
-# 
-# vefmap_cpue <- vefmap_cpue %>%
-#   filter(
-#     survey_year == 2023,
-#     id_site %in% sites
-#   )
-# 
-# # once you're done editing the query, you can download the data set
-# #   with the collect() function
-# vefmap_cpue <- vefmap_cpue %>% collect()
-
-
-
-##==========================================================================================================================================
-##==========================================================================================================================================
-##==========================================================================================================================================
-##==========================================================================================================================================
-
+# find sites fished this year (2023) and their previous fished year (only VEFMAP for now)
 survey_sites_ba_years <- fetch_query(
   "WITH base_data AS (
     SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by waterbody, id_site order by waterbody, id_site, yr DESC) rank
@@ -52,16 +31,20 @@ survey_sites_ba_years <- fetch_query(
   collect = FALSE
 )
 
+#collect the data
 survey_sites_ba_years <- survey_sites_ba_years %>% collect()
 
 str(survey_sites_ba_years)
+# get the minimum year of previous surveys to truncate the VEFMAP cpue intial data download
 min_yr = min(survey_sites_ba_years$yr)
 
-vefmap_cpue <- fetch_cpue(2)
 
+vefmap_cpue <- fetch_cpue(2)
+#filter data to min year and over
 vefmap_cpue <- vefmap_cpue %>% filter(survey_year >= min_yr )
 
 vefmap_cpue <- vefmap_cpue %>% collect()
 
+#inner join the analysis sites df and the cpue df to only retain relevant data
 vefmap_cpue <- inner_join(vefmap_cpue, survey_sites_ba_years, by = c('id_site', "survey_year" = 'yr')) 
 
