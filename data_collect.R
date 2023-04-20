@@ -72,10 +72,7 @@ vefmap_sp <- vefmap_sp %>%
     waterbody %in% c('Broken River', 'Little Murray River')
   )
 
-# vefmap_sp <- vefmap_sp %>% filter(survey_year >= 2017)
 vefmap_sp <- vefmap_sp %>% collect()
-
-# vefmap_sp <- vefmap_sp[vefmap_sp$waterbody %in% waterbodies$waterbody.x, ]
 vefmap_sp <- vefmap_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch))
 vefmap_sp <- vefmap_sp[vefmap_sp$catch_total > 0,]
 
