@@ -55,3 +55,43 @@ vefmap_cpue <- vefmap_cpue %>% collect()
 #inner join the analysis sites df and the cpue df to only retain relevant data
 vefmap_cpue <- inner_join(vefmap_cpue, survey_sites_ba_years, by = c('id_site', "survey_year" = 'yr')) 
 
+#factor rank (1 = after, 2 = before)
+vefmap_cpue$rank<- as.factor(vefmap_cpue$rank)
+
+# Get the waterbodies from the current dataset to use in species filter
+waterbodies <- distinct(vefmap_cpue, waterbody.x)
+colnames(waterbodies) = 'waterbody'
+
+#=======================================================================================================
+#get list of species per site over site recent history
+vefmap_sp <- fetch_cpue(2)
+
+#!!!! Actually want this filtered by the waterbodies df
+vefmap_sp <- vefmap_sp %>%
+  filter(
+    waterbody %in% c('Broken River', 'Little Murray River')
+  )
+
+# vefmap_sp <- vefmap_sp %>% filter(survey_year >= 2017)
+vefmap_sp <- vefmap_sp %>% collect()
+
+# vefmap_sp <- vefmap_sp[vefmap_sp$waterbody %in% waterbodies$waterbody.x, ]
+vefmap_sp <- vefmap_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch))
+vefmap_sp <- vefmap_sp[vefmap_sp$catch_total > 0,]
+
+#=======================================================================================================
+
+#filter current dataset for sp available to the site
+vefmap_cpue.filtered <- inner_join(vefmap_cpue, vefmap_sp, by = c('id_site', 'scientific_name'))
+
+#list project focal species
+sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
+
+#filter current dataset to focal species
+vefmap_cpue.filtered <- vefmap_cpue.filtered[vefmap_cpue.filtered$scientific_name %in% sp,]
+
+
+
+
+
+
