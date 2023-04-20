@@ -87,6 +87,21 @@ sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Macquaria ambigua' , 'Mela
 #filter current dataset to focal species
 vefmap_cpue.filtered <- vefmap_cpue.filtered[vefmap_cpue.filtered$scientific_name %in% sp,]
 
+#transpose the before and after cpue values
+flood_data_ba = pivot_wider(vefmap_cpue.filtered, names_from = rank, values_from = cpue)
+colnames(flood_data_ba)[19] <- 'before_cpue'
+colnames(flood_data_ba)[20] <- 'after_cpue'
+
+#remove na values in cpue columns
+flood_data_ba$before_cpue <- ifelse(is.na(flood_data_ba$before_cpue), 0, flood_data_ba$before_cpue)
+flood_data_ba$after_cpue <- ifelse(is.na(flood_data_ba$after_cpue), 0, flood_data_ba$after_cpue)
+
+#Compact the data to line up before and after cpue
+flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody.x', 'site_name.x', 'scientific_name', 'before_cpue', 'after_cpue' ) %>% group_by(id_site, waterbody.x, site_name.x, scientific_name) %>% summarise(before_cpue = max(before_cpue), after_cpue = max(after_cpue))
+
+#remove species not caught in both before and after surveys
+flood_data_ba <- flood_data_ba[flood_data_ba$before_cpue > 0 | flood_data_ba$after_cpue > 0,]
+
 
 
 
