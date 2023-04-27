@@ -19,22 +19,32 @@ library(dplyr)
 # find sites fished this year (2023) and their previous fished year (only VEFMAP for now)
 survey_sites_ba_years <- fetch_query(
   "WITH base_data AS (
-    SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by waterbody, id_site order by waterbody, id_site, yr DESC) rank
+    SELECT id_site, site_name, waterbody, id_project, yr
     	FROM aquatic_data.v_site_year
-    	WHERE waterbody IN ('Broken River', 'Little Murray River') AND id_project = 2
-    	ORDER BY waterbody, id_site, yr DESC
+    	WHERE waterbody IN ('Broken River', 'Little Murray River', 'Campaspe River') AND id_project = 2
+	UNION ALL
+    SELECT id_site, site_name, waterbody, id_project, yr
+    	FROM aquatic_data.v_site_year
+    	WHERE id_project = 19
     )
+	, rank_site_years as (
+	
+SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by waterbody, id_site order by waterbody, id_site, yr DESC) rank
+    	FROM base_data
+    	ORDER BY waterbody, id_site, yr DESC	
+	
+	)
     , sites_to_use as (
     SELECT id_site, max(yr), count(*)
-    FROM base_data
+    FROM rank_site_years
     WHERE rank in (1,2) 
     GROUP BY id_site
     HAVING max(yr) = 2023 AND  count(*)  = 2
     )
     SELECT a.id_site, site_name, waterbody, id_project, yr, rank
-    FROM base_data a INNER JOIN sites_to_use b ON a.id_site = b.id_site
+    FROM rank_site_years a INNER JOIN sites_to_use b ON a.id_site = b.id_site
     WHERE rank in (1,2)
-    ORDER BY site_name, a.id_site, waterbody, id_project, rank",
+    ORDER BY waterbody, site_name, a.id_site, id_project, rank",
   collect = FALSE
 )
 
