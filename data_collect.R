@@ -1,3 +1,10 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Flood Analysis Project 2023
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 # remotes::install_github("aae-stats/aae.db")
 
 
@@ -10,6 +17,7 @@
 
 library(aae.db)
 library(dplyr)
+library(tidyr)
 
 ##==========================================================================================================================================
 ##==========================================================================================================================================
@@ -51,54 +59,57 @@ SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by w
 #collect the data
 survey_sites_ba_years <- survey_sites_ba_years %>% collect()
 
+# Get the waterbodies from the current dataset to use in species filter
+waterbodies <- distinct(survey_sites_ba_years, waterbody)
+# colnames(waterbodies) = 'waterbody'
+
 str(survey_sites_ba_years)
 # get the minimum year of previous surveys to truncate the VEFMAP cpue intial data download
 min_yr = min(survey_sites_ba_years$yr)
 
+##==========================================================================================================================================
 
-vefmap_cpue <- fetch_cpue(2)
-#filter data to min year and over
-vefmap_cpue <- vefmap_cpue %>% filter(survey_year >= min_yr )
+projects_to_use <- c(2, 19)
 
-vefmap_cpue <- vefmap_cpue %>% collect()
+catch_cpue <- fetch_cpue(projects_to_use)
+#filter data to min year and over (split filter to make sure collect works)
+catch_cpue <- catch_cpue %>% filter(survey_year >= min_yr)
+# catch_cpue <- catch_cpue %>% filter(waterbody %in% waterbodies$waterbody)
+# catch_cpue <- catch_cpue %>% filter(waterbody %in% c("Barmah Lake","Broken River","Campaspe River","Flat Swamp","Little Murray River","Tongalong Creek","Tullah Creek"))
+
+catch_cpue <- catch_cpue %>% collect()
+
+catch_cpue <- catch_cpue %>% filter(waterbody %in% waterbodies$waterbody)
 
 #inner join the analysis sites df and the cpue df to only retain relevant data
-vefmap_cpue <- inner_join(vefmap_cpue, survey_sites_ba_years, by = c('id_site', "survey_year" = 'yr')) 
+catch_cpue <- inner_join(catch_cpue, survey_sites_ba_years, by = c('id_site', "survey_year" = 'yr')) 
 
 #factor rank (1 = after, 2 = before)
-vefmap_cpue$rank<- as.factor(vefmap_cpue$rank)
+catch_cpue$rank<- as.factor(catch_cpue$rank)
 
-# Get the waterbodies from the current dataset to use in species filter
-waterbodies <- distinct(vefmap_cpue, waterbody.x)
-colnames(waterbodies) = 'waterbody'
+str(catch_cpue)
 
-#=======================================================================================================
+##==========================================================================================================================================
 #get list of species per site over site recent history
-vefmap_sp <- fetch_cpue(2)
+catch_sp <- fetch_cpue(projects_to_use)
+catch_sp <- catch_sp %>% collect()
+catch_sp <- catch_sp %>% filter(waterbody %in% waterbodies$waterbody)
+catch_sp <- catch_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch))
+catch_sp <- catch_sp[catch_sp$catch_total > 0,]
 
-#!!!! Actually want this filtered by the waterbodies df
-vefmap_sp <- vefmap_sp %>%
-  filter(
-    waterbody %in% c('Broken River', 'Little Murray River')
-  )
-
-vefmap_sp <- vefmap_sp %>% collect()
-vefmap_sp <- vefmap_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch))
-vefmap_sp <- vefmap_sp[vefmap_sp$catch_total > 0,]
-
-#=======================================================================================================
+##==========================================================================================================================================
 
 #filter current dataset for sp available to the site
-vefmap_cpue.filtered <- inner_join(vefmap_cpue, vefmap_sp, by = c('id_site', 'scientific_name'))
+catch_cpue.filtered <- inner_join(catch_cpue, catch_sp, by = c('id_site', 'scientific_name'))
 
 #list project focal species
 sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
 
 #filter current dataset to focal species
-vefmap_cpue.filtered <- vefmap_cpue.filtered[vefmap_cpue.filtered$scientific_name %in% sp,]
+catch_cpue.filtered <- catch_cpue.filtered[catch_cpue.filtered$scientific_name %in% sp,]
 
 #transpose the before and after cpue values
-flood_data_ba = pivot_wider(vefmap_cpue.filtered, names_from = rank, values_from = cpue)
+flood_data_ba = pivot_wider(catch_cpue.filtered, names_from = rank, values_from = cpue)
 colnames(flood_data_ba)[19] <- 'before_cpue'
 colnames(flood_data_ba)[20] <- 'after_cpue'
 
