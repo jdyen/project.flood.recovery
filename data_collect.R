@@ -123,7 +123,15 @@ flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody.x', 'site_name.x
 #remove species not caught in both before and after surveys
 flood_data_ba <- flood_data_ba[flood_data_ba$before_cpue > 0 | flood_data_ba$after_cpue > 0,]
 
+##==========================================================================================================================================
+# Append flood impact categories
+site_flood_impact <- read.csv("site_flood_impact.csv", header = TRUE)
+flood_data_ba <- inner_join(flood_data_ba, site_flood_impact, by = c('id_site'))
+str(flood_data_ba)
+flood_data_ba <- subset(flood_data_ba, select = -c(waterbody.y,site_name.y))
+flood_data_ba <- flood_data_ba %>% rename(waterbody = waterbody.x, site_name = site_name.x)
 
+##==========================================================================================================================================
 
 
 
