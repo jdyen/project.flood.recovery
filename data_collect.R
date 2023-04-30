@@ -60,7 +60,7 @@ SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by w
 survey_sites_ba_years <- survey_sites_ba_years %>% collect()
 
 # Get the waterbodies from the current dataset to use in species filter
-waterbodies <- distinct(survey_sites_ba_years, waterbody)
+waterbodies <- as.data.frame(distinct(survey_sites_ba_years, waterbody))
 # colnames(waterbodies) = 'waterbody'
 
 str(survey_sites_ba_years)
@@ -73,16 +73,11 @@ projects_to_use <- c(2, 19)
 
 catch_cpue <- fetch_cpue(projects_to_use)
 #filter data to min year and over (split filter to make sure collect works)
-catch_cpue <- catch_cpue %>% filter(survey_year >= min_yr)
-# catch_cpue <- catch_cpue %>% filter(waterbody %in% waterbodies$waterbody)
-# catch_cpue <- catch_cpue %>% filter(waterbody %in% c("Barmah Lake","Broken River","Campaspe River","Flat Swamp","Little Murray River","Tongalong Creek","Tullah Creek"))
-
+catch_cpue <- catch_cpue %>% filter(survey_year >= min_yr & waterbody %in% !!waterbodies$waterbody)
 catch_cpue <- catch_cpue %>% collect()
 
-catch_cpue <- catch_cpue %>% filter(waterbody %in% waterbodies$waterbody)
-
 #inner join the analysis sites df and the cpue df to only retain relevant data
-catch_cpue <- inner_join(catch_cpue, survey_sites_ba_years, by = c('id_site', "survey_year" = 'yr')) 
+catch_cpue <- inner_join(catch_cpue, survey_sites_ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
 
 #factor rank (1 = after, 2 = before)
 catch_cpue$rank<- as.factor(catch_cpue$rank)
@@ -92,9 +87,9 @@ str(catch_cpue)
 ##==========================================================================================================================================
 #get list of species per site over site recent history
 catch_sp <- fetch_cpue(projects_to_use)
-catch_sp <- catch_sp %>% collect()
-catch_sp <- catch_sp %>% filter(waterbody %in% waterbodies$waterbody)
+catch_sp <- catch_sp %>% filter(waterbody %in% !!waterbodies$waterbody)
 catch_sp <- catch_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch))
+catch_sp <- catch_sp %>% collect()
 catch_sp <- catch_sp[catch_sp$catch_total > 0,]
 
 ##==========================================================================================================================================
@@ -110,15 +105,15 @@ catch_cpue.filtered <- catch_cpue.filtered[catch_cpue.filtered$scientific_name %
 
 #transpose the before and after cpue values
 flood_data_ba = pivot_wider(catch_cpue.filtered, names_from = rank, values_from = cpue)
-colnames(flood_data_ba)[19] <- 'before_cpue'
-colnames(flood_data_ba)[20] <- 'after_cpue'
+colnames(flood_data_ba)[colnames(flood_data_ba) == '2'] <- 'before_cpue'
+colnames(flood_data_ba)[colnames(flood_data_ba) == '1'] <- 'after_cpue'
 
 #remove na values in cpue columns
 flood_data_ba$before_cpue <- ifelse(is.na(flood_data_ba$before_cpue), 0, flood_data_ba$before_cpue)
 flood_data_ba$after_cpue <- ifelse(is.na(flood_data_ba$after_cpue), 0, flood_data_ba$after_cpue)
 
 #Compact the data to line up before and after cpue
-flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody.x', 'site_name.x', 'scientific_name', 'before_cpue', 'after_cpue' ) %>% group_by(id_site, waterbody.x, site_name.x, scientific_name) %>% summarise(before_cpue = max(before_cpue), after_cpue = max(after_cpue))
+flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody', 'site_name', 'scientific_name', 'before_cpue', 'after_cpue' ) %>% group_by(id_site, waterbody, site_name, scientific_name) %>% summarise(before_cpue = max(before_cpue), after_cpue = max(after_cpue))
 
 #remove species not caught in both before and after surveys
 flood_data_ba <- flood_data_ba[flood_data_ba$before_cpue > 0 | flood_data_ba$after_cpue > 0,]
