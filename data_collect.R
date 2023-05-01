@@ -88,7 +88,7 @@ str(catch_cpue)
 #get list of species per site over site recent history
 catch_sp <- fetch_cpue(projects_to_use)
 catch_sp <- catch_sp %>% filter(waterbody %in% !!waterbodies$waterbody)
-catch_sp <- catch_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch))
+catch_sp <- catch_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch), .groups = "keep")
 catch_sp <- catch_sp %>% collect()
 catch_sp <- catch_sp[catch_sp$catch_total > 0,]
 
