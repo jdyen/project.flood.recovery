@@ -98,7 +98,7 @@ catch_sp <- catch_sp[catch_sp$catch_total > 0,]
 catch_cpue.filtered <- inner_join(catch_cpue, catch_sp, by = c('id_site', 'scientific_name'))
 
 #list project focal species
-sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
+sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Maccullochella macquariensis', 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
 
 #filter current dataset to focal species
 catch_cpue.filtered <- catch_cpue.filtered[catch_cpue.filtered$scientific_name %in% sp,]
