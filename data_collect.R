@@ -25,7 +25,7 @@ library(tidyr)
 ##==========================================================================================================================================
 
 # find sites fished this year (2023) and their previous fished year (only VEFMAP for now)
-survey_sites_ba_years <- fetch_query(
+sites.ba_years <- fetch_query(
   "WITH base_data AS (
     SELECT id_site, site_name, waterbody, id_project, yr
     	FROM aquatic_data.v_site_year
@@ -57,54 +57,54 @@ SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by w
 )
 
 #collect the data
-survey_sites_ba_years <- survey_sites_ba_years %>% collect()
+sites.ba_years <- sites.ba_years %>% collect()
 
 # Get the waterbodies from the current dataset to use in species filter
-waterbodies <- as.data.frame(distinct(survey_sites_ba_years, waterbody))
+waterbodies <- as.data.frame(distinct(sites.ba_years, waterbody))
 # colnames(waterbodies) = 'waterbody'
 
-str(survey_sites_ba_years)
+str(sites.ba_years)
 # get the minimum year of previous surveys to truncate the VEFMAP cpue intial data download
-min_yr = min(survey_sites_ba_years$yr)
+min_yr = min(sites.ba_years$yr)
 
 ##==========================================================================================================================================
 
 projects_to_use <- c(2, 19)
 
-catch_cpue <- fetch_cpue(projects_to_use)
+catch.cpue <- fetch_cpue(projects_to_use)
 #filter data to min year and over (split filter to make sure collect works)
-catch_cpue <- catch_cpue %>% filter(survey_year >= min_yr & waterbody %in% !!waterbodies$waterbody)
-catch_cpue <- catch_cpue %>% collect()
+catch.cpue <- catch.cpue %>% filter(survey_year >= min_yr & waterbody %in% !!waterbodies$waterbody)
+catch.cpue <- catch.cpue %>% collect()
 
 #inner join the analysis sites df and the cpue df to only retain relevant data
-catch_cpue <- inner_join(catch_cpue, survey_sites_ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
+catch.cpue <- inner_join(catch.cpue, sites.ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
 
 #factor rank (1 = after, 2 = before)
-catch_cpue$rank<- as.factor(catch_cpue$rank)
+catch.cpue$rank<- as.factor(catch.cpue$rank)
 
-str(catch_cpue)
+str(catch.cpue)
 
 ##==========================================================================================================================================
 #get list of species per site over site recent history
-catch_sp <- fetch_cpue(projects_to_use)
-catch_sp <- catch_sp %>% filter(waterbody %in% !!waterbodies$waterbody)
-catch_sp <- catch_sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch), .groups = "keep")
-catch_sp <- catch_sp %>% collect()
-catch_sp <- catch_sp[catch_sp$catch_total > 0,]
+catch.sp <- fetch_cpue(projects_to_use)
+catch.sp <- catch.sp %>% filter(waterbody %in% !!waterbodies$waterbody)
+catch.sp <- catch.sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% group_by(id_site, scientific_name) %>% summarise(catch_total = sum(catch), .groups = "keep")
+catch.sp <- catch.sp %>% collect()
+catch.sp <- catch.sp[catch.sp$catch_total > 0,]
 
 ##==========================================================================================================================================
 
 #filter current dataset for sp available to the site
-catch_cpue.filtered <- inner_join(catch_cpue, catch_sp, by = c('id_site', 'scientific_name'))
+catch.cpue_filtered <- inner_join(catch.cpue, catch.sp, by = c('id_site', 'scientific_name'))
 
 #list project focal species
 sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Maccullochella macquariensis', 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
 
 #filter current dataset to focal species
-catch_cpue.filtered <- catch_cpue.filtered[catch_cpue.filtered$scientific_name %in% sp,]
+catch.cpue_filtered <- catch.cpue_filtered[catch.cpue_filtered$scientific_name %in% sp,]
 
 #transpose the before and after cpue values
-flood_data_ba = pivot_wider(catch_cpue.filtered, names_from = rank, values_from = cpue)
+flood_data_ba = pivot_wider(catch.cpue_filtered, names_from = rank, values_from = cpue)
 colnames(flood_data_ba)[colnames(flood_data_ba) == '2'] <- 'before_cpue'
 colnames(flood_data_ba)[colnames(flood_data_ba) == '1'] <- 'after_cpue'
 
@@ -119,12 +119,22 @@ flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody', 'site_name', '
 flood_data_ba <- flood_data_ba[flood_data_ba$before_cpue > 0 | flood_data_ba$after_cpue > 0,]
 
 ##==========================================================================================================================================
-# Append flood impact categories
-site_flood_impact <- read.csv("site_flood_impact.csv", header = TRUE)
-flood_data_ba <- inner_join(flood_data_ba, site_flood_impact, by = c('id_site'))
+# Merge flood impact categories
+site.flood_impact <- read.csv("site_flood_impact.csv", header = TRUE)
+flood_data_ba <- inner_join(flood_data_ba, site.flood_impact, by = c('id_site'))
 
 ##==========================================================================================================================================
+##==========================================================================================================================================
+##==========================================================================================================================================
 
+### Run code in water_data_collect.R to generate before/after discharge values (all_site.water_data) for sites
+
+# Merge before/after discharge data
+flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site'))
+
+##==========================================================================================================================================
+##==========================================================================================================================================
+##==========================================================================================================================================
 
 
 
