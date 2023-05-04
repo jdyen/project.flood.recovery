@@ -117,8 +117,6 @@ flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody', 'site_name', '
 
 #remove species not caught in both before and after surveys
 flood_data_ba <- flood_data_ba[flood_data_ba$before_cpue > 0 | flood_data_ba$after_cpue > 0,]
-# calc delta cpue
-flood_data_ba$delta_cpue <- flood_data_ba$after_cpue - flood_data_ba$before_cpue
 
 ##==========================================================================================================================================
 # Append flood impact categories

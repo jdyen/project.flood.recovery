@@ -5,7 +5,7 @@ source("local_paths.R")
 #https://gist.github.com/TonyLadson/ac0a68a3ec27ae23211bfedd2ac56657
 
 my.path = str_c(get_project_path(), 'ratings_tables', sep = '/')
-my.file <- 'rt_406201.txt'
+my.file <- 'rt_406202.txt'
 
 fname <- str_c(my.path, my.file, sep = '/')
 
