@@ -25,7 +25,7 @@ library(tidyr)
 ##==========================================================================================================================================
 
 # find sites fished this year (2023) and their previous fished year (only VEFMAP for now)
-sites.ba_years <- fetch_query(
+site.ba_years <- fetch_query(
   "WITH base_data AS (
     SELECT id_site, site_name, waterbody, id_project, yr
     	FROM aquatic_data.v_site_year
@@ -57,15 +57,15 @@ SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by w
 )
 
 #collect the data
-sites.ba_years <- sites.ba_years %>% collect()
+site.ba_years <- site.ba_years %>% collect()
 
 # Get the waterbodies from the current dataset to use in species filter
-waterbodies <- as.data.frame(distinct(sites.ba_years, waterbody))
+waterbodies <- as.data.frame(distinct(site.ba_years, waterbody))
 # colnames(waterbodies) = 'waterbody'
 
-str(sites.ba_years)
+str(site.ba_years)
 # get the minimum year of previous surveys to truncate the VEFMAP cpue intial data download
-min_yr = min(sites.ba_years$yr)
+min_yr = min(site.ba_years$yr)
 
 ##==========================================================================================================================================
 
@@ -77,7 +77,7 @@ catch.cpue <- catch.cpue %>% filter(survey_year >= min_yr & waterbody %in% !!wat
 catch.cpue <- catch.cpue %>% collect()
 
 #inner join the analysis sites df and the cpue df to only retain relevant data
-catch.cpue <- inner_join(catch.cpue, sites.ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
+catch.cpue <- inner_join(catch.cpue, site.ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
 
 #factor rank (1 = after, 2 = before)
 catch.cpue$rank<- as.factor(catch.cpue$rank)
