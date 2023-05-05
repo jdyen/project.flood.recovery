@@ -20,6 +20,24 @@ library(dplyr)
 library(tidyr)
 
 ##==========================================================================================================================================
+##======================================= FUNCTIONS ========================================================================================
+##==========================================================================================================================================
+
+check_row_counts <- function(count1, count2, error_message){
+  ifelse(count1 != count2, error_message, "All GOOD")
+}
+
+populate_recruit_data <- function(flood_data_table, recruit_table){
+  
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$before_1plus = recruit_table[['before_1plus']]
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$after_1plus = recruit_table[['after_1plus']]
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$before_yoy = recruit_table[['before_yoy']]
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$after_yoy = recruit_table[['after_yoy']]
+  pop_recruit_data <- flood_data_table
+  
+}
+
+##==========================================================================================================================================
 ##==========================================================================================================================================
 ##==========================================================================================================================================
 ##==========================================================================================================================================
@@ -67,24 +85,15 @@ str(site.ba_years)
 # get the minimum year of previous surveys to truncate the VEFMAP cpue intial data download
 min_yr = min(site.ba_years$yr)
 
-##==========================================================================================================================================
-
 projects_to_use <- c(2, 19)
 
-catch.cpue <- fetch_cpue(projects_to_use)
-#filter data to min year and over (split filter to make sure collect works)
-catch.cpue <- catch.cpue %>% filter(survey_year >= min_yr & waterbody %in% !!waterbodies$waterbody)
-catch.cpue <- catch.cpue %>% collect()
+##==========================================================================================================================================
 
-#inner join the analysis sites df and the cpue df to only retain relevant data
-catch.cpue <- inner_join(catch.cpue, site.ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
-
-#factor rank (1 = after, 2 = before)
-catch.cpue$rank<- as.factor(catch.cpue$rank)
-
-str(catch.cpue)
+#list project focal species
+sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Maccullochella macquariensis', 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
 
 ##==========================================================================================================================================
+
 #get list of species per site over site recent history
 catch.sp <- fetch_cpue(projects_to_use)
 catch.sp <- catch.sp %>% filter(waterbody %in% !!waterbodies$waterbody)
@@ -95,46 +104,74 @@ catch.sp <- catch.sp[catch.sp$catch_total > 0,]
 ##==========================================================================================================================================
 
 #filter current dataset for sp available to the site
-catch.cpue_filtered <- inner_join(catch.cpue, catch.sp, by = c('id_site', 'scientific_name'))
-
-#list project focal species
-sp = c('Cyprinus carpio' , 'Maccullochella peelii' , 'Maccullochella macquariensis', 'Macquaria ambigua' , 'Melanotaenia fluviatilis' , 'Perca fluviatilis' , 'Retropinna semoni' , 'Bidyanus bidyanus', 'Macquaria australasica', 'Salmo trutta', 'Gadopsis marmoratus', 'Gadopsis bispinosus')
+flood_data_ba <- inner_join(site.ba_years, catch.sp[,c('id_site', 'scientific_name')], by = c('id_site'), relationship = "many-to-many")
 
 #filter current dataset to focal species
-catch.cpue_filtered <- catch.cpue_filtered[catch.cpue_filtered$scientific_name %in% sp,]
+flood_data_ba <- flood_data_ba[flood_data_ba$scientific_name %in% sp,]
 
-#transpose the before and after cpue values
-flood_data_ba = pivot_wider(catch.cpue_filtered, names_from = rank, values_from = cpue)
-colnames(flood_data_ba)[colnames(flood_data_ba) == '2'] <- 'before_cpue'
-colnames(flood_data_ba)[colnames(flood_data_ba) == '1'] <- 'after_cpue'
-
-#remove na values in cpue columns
-flood_data_ba$before_cpue <- ifelse(is.na(flood_data_ba$before_cpue), 0, flood_data_ba$before_cpue)
-flood_data_ba$after_cpue <- ifelse(is.na(flood_data_ba$after_cpue), 0, flood_data_ba$after_cpue)
-
-#Compact the data to line up before and after cpue
-flood_data_ba <- flood_data_ba %>% select('id_site', 'waterbody', 'site_name', 'scientific_name', 'before_cpue', 'after_cpue' ) %>% group_by(id_site, waterbody, site_name, scientific_name) %>% summarise(before_cpue = max(before_cpue), after_cpue = max(after_cpue))
-
-#remove species not caught in both before and after surveys
-flood_data_ba <- flood_data_ba[flood_data_ba$before_cpue > 0 | flood_data_ba$after_cpue > 0,]
+flood_data_ba <- select(flood_data_ba, c('id_site', 'site_name', 'waterbody', 'id_project','scientific_name')) %>% group_by(id_site, site_name, waterbody, id_project, scientific_name) %>% summarise()
 
 ##==========================================================================================================================================
-# Merge flood impact categories
-site.flood_impact <- read.csv("site_flood_impact.csv", header = TRUE)
-flood_data_ba <- inner_join(flood_data_ba, site.flood_impact, by = c('id_site'))
+
+# core list of sites to be used in the analysis (used for checking that none are lost in various stages)
+site.list <- flood_data_ba %>% group_by(id_site) %>% summarise()
 
 ##==========================================================================================================================================
-##==========================================================================================================================================
+##========================================== CPUE DATA =====================================================================================
 ##==========================================================================================================================================
 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### Run code in cpue_data_collect.R to generate before/after cpue values (catch.cpue_ba) for sites
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#Check that site count is equal
+print(check_row_counts(nrow(site.list), nrow(catch.cpue_ba %>% group_by(id_site) %>% summarise()), "MISSING SITEs catch.cpue_ba" ))
+
+# Merge before/after discharge data (can make this a LEFT join to include existing site species absent from BA surveys)
+flood_data_ba <- inner_join(flood_data_ba, catch.cpue_ba[,c('id_site', 'scientific_name', 'before_cpue', 'after_cpue')], by = c('id_site', 'scientific_name'))
+
+##==========================================================================================================================================
+##=========================================== DISCHARGE DATA ===============================================================================
+##==========================================================================================================================================
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ### Run code in water_data_collect.R to generate before/after discharge values (all_site.water_data) for sites
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Merge before/after discharge data
 flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site'))
 
 ##==========================================================================================================================================
+##=========================================== RECRUIT DATA ===============================================================================
 ##==========================================================================================================================================
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### Run code in recruit_data_collect.R to generate before/after yoy counts for sites
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+flood_data_ba$before_1plus = as.integer(NA)
+flood_data_ba$after_1plus = as.integer(NA)
+flood_data_ba$before_yoy = as.integer(NA)
+flood_data_ba$after_yoy = as.integer(NA)
+
+# Merge before/after recruit data
+flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_mc)
+flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_tc)
+flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_bf)
+flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_cc)
+
+
+##==========================================================================================================================================
+##=========================================== FLOOD IMPACT CATEGORIES ======================================================================
 ##==========================================================================================================================================
 
+# Merge flood impact categories
+site.flood_impact <- read.csv("site_flood_impact.csv", header = TRUE)
+flood_data_ba <- inner_join(flood_data_ba, site.flood_impact, by = c('id_site'))
 
+#Check that sites haven't been lost
+print(check_row_counts(nrow(site.list), nrow(flood_data_ba %>% group_by(id_site) %>% summarise()), "MISSING SITES IN THE IMPACT LIST" ))
 
+##==========================================================================================================================================
+
+aaedb_disconnect()
