@@ -2,6 +2,8 @@
 
 # Flood Analysis Project 2023
 
+# CPUE DATA COLLECT
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -53,8 +55,8 @@ catch.cpue_ba$after_cpue <- ifelse(is.na(catch.cpue_ba$after_cpue), 0, catch.cpu
 #Compact the data to line up before and after cpue
 catch.cpue_ba <- catch.cpue_ba %>% select('id_site', 'waterbody', 'site_name', 'scientific_name', 'before_cpue', 'after_cpue' ) %>% group_by(id_site, waterbody, site_name, scientific_name) %>% summarise(before_cpue = max(before_cpue), after_cpue = max(after_cpue))
 
-#remove species not caught in both before and after surveys
-catch.cpue_ba <- catch.cpue_ba[catch.cpue_ba$before_cpue > 0 | catch.cpue_ba$after_cpue > 0,]
+#remove species not caught in both before and after surveys (keep them in for now)
+# catch.cpue_ba <- catch.cpue_ba[catch.cpue_ba$before_cpue > 0 | catch.cpue_ba$after_cpue > 0,]
 
 #get a list of sites to check against site.list to make sure all sites are included
 catch.cpue_site_list <- catch.cpue_ba %>% group_by(id_site) %>% summarise()

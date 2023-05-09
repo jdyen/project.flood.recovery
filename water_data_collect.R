@@ -2,6 +2,8 @@
 
 # Flood Analysis Project 2023
 
+# WATER DATA COLLECT
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # remotes::install_github("aae-stats/aae.hydro")
@@ -61,6 +63,8 @@ site.station_date_range[site.station_date_range$id_site == 4281,]$station = "409
 site.station_date_range[site.station_date_range$id_site == 4282,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4283,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4286,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4145,]$station = "404214"
+
 ##==========================================================================================================================================
 
 # Find the common date ranges for the stations
@@ -85,6 +89,7 @@ while (i <= nrow(date_groups))
     variables = c("discharge"), #, "level"),
     options = list(varfrom = c("100.00"),  varto = c("141.00")),
     data_source = "TELEM",
+    # include_missing = TRUE,
     state = "vic"
   )
 

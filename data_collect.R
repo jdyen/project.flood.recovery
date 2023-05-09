@@ -44,33 +44,9 @@ populate_recruit_data <- function(flood_data_table, recruit_table){
 
 # find sites fished this year (2023) and their previous fished year (only VEFMAP for now)
 site.ba_years <- fetch_query(
-  "WITH base_data AS (
-    SELECT id_site, site_name, waterbody, id_project, yr
-    	FROM aquatic_data.v_site_year
-    	WHERE waterbody IN ('Broken River', 'Little Murray River', 'Campaspe River') AND id_project = 2
-	UNION ALL
-    SELECT id_site, site_name, waterbody, id_project, yr
-    	FROM aquatic_data.v_site_year
-    	WHERE id_project = 19
-    )
-	, rank_site_years as (
-	
-SELECT id_site, site_name, waterbody, id_project, yr, rank() over(partition by waterbody, id_site order by waterbody, id_site, yr DESC) rank
-    	FROM base_data
-    	ORDER BY waterbody, id_site, yr DESC	
-	
-	)
-    , sites_to_use as (
-    SELECT id_site, max(yr), count(*)
-    FROM rank_site_years
-    WHERE rank in (1,2) 
-    GROUP BY id_site
-    HAVING max(yr) = 2023 AND  count(*)  = 2
-    )
-    SELECT a.id_site, site_name, waterbody, id_project, yr, rank
-    FROM rank_site_years a INNER JOIN sites_to_use b ON a.id_site = b.id_site
-    WHERE rank in (1,2)
-    ORDER BY waterbody, site_name, a.id_site, id_project, rank",
+  "SELECT id_site, site_name, waterbody, id_project, yr, sdate, rank
+	 FROM projects.v_floods_site_survey_dates
+   ORDER BY waterbody, site_name, id_site, id_project, rank",
   collect = FALSE
 )
 
@@ -85,7 +61,7 @@ str(site.ba_years)
 # get the minimum year of previous surveys to truncate the VEFMAP cpue intial data download
 min_yr = min(site.ba_years$yr)
 
-projects_to_use <- c(2, 19)
+projects_to_use <- array(unlist(distinct(site.ba_years, id_project)))
 
 ##==========================================================================================================================================
 
@@ -114,7 +90,7 @@ flood_data_ba <- select(flood_data_ba, c('id_site', 'site_name', 'waterbody', 'i
 ##==========================================================================================================================================
 
 # core list of sites to be used in the analysis (used for checking that none are lost in various stages)
-site.list <- flood_data_ba %>% group_by(id_site) %>% summarise()
+site.list <- flood_data_ba %>% group_by(id_site, waterbody) %>% summarise()
 
 ##==========================================================================================================================================
 ##========================================== CPUE DATA =====================================================================================
@@ -137,6 +113,9 @@ flood_data_ba <- inner_join(flood_data_ba, catch.cpue_ba[,c('id_site', 'scientif
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ### Run code in water_data_collect.R to generate before/after discharge values (all_site.water_data) for sites
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#Check that site count is equal
+print(check_row_counts(nrow(site.list), nrow(all_site.water_data %>% group_by(id_site) %>% summarise()), "MISSING SITEs in all_site.water_data" ))
 
 # Merge before/after discharge data
 flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site'))
@@ -173,5 +152,6 @@ flood_data_ba <- inner_join(flood_data_ba, site.flood_impact, by = c('id_site'))
 print(check_row_counts(nrow(site.list), nrow(flood_data_ba %>% group_by(id_site) %>% summarise()), "MISSING SITES IN THE IMPACT LIST" ))
 
 ##==========================================================================================================================================
+
 
 aaedb_disconnect()
