@@ -5,4 +5,4 @@
 baci_power_example.R
 workshop
 local_paths.R
-.Rproj
+*.Rproj
