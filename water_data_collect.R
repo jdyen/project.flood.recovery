@@ -65,6 +65,9 @@ site.station_date_range[site.station_date_range$id_site == 4283,]$station = "409
 site.station_date_range[site.station_date_range$id_site == 4286,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4145,]$station = "404214"
 
+site.station_date_range[site.station_date_range$id_site == 1334,]$station = "405200"
+site.station_date_range[site.station_date_range$id_site == 1535,]$station = "405204"
+
 ##==========================================================================================================================================
 
 # Find the common date ranges for the stations
