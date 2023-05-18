@@ -52,7 +52,7 @@ site.station_date_range$station <- as.character(site.station_date_range$station)
 ##================================== SITE STATION FIXES ====================================================================================
 ##==========================================================================================================================================
 ##==========================================================================================================================================
-#STUFF
+
 site.station_date_range[site.station_date_range$id_site == 1285,]$station = "406201"
 site.station_date_range[site.station_date_range$station == "406218",]$station = "406202"
 site.station_date_range[site.station_date_range$station == "406264",]$station = "406202"
@@ -64,6 +64,34 @@ site.station_date_range[site.station_date_range$id_site == 4282,]$station = "409
 site.station_date_range[site.station_date_range$id_site == 4283,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4286,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4145,]$station = "404214"
+
+site.station_date_range[site.station_date_range$id_site == 1334,]$station = "405200"
+site.station_date_range[site.station_date_range$id_site == 1535,]$station = "405204"
+site.station_date_range[site.station_date_range$id_site == 1536,]$station = "405270"
+site.station_date_range[site.station_date_range$id_site == 3115,]$station = "405209"
+
+site.station_date_range[site.station_date_range$id_site == 3311,]$station = "405234"
+site.station_date_range[site.station_date_range$id_site == 3283,]$station = "405234"
+site.station_date_range[site.station_date_range$id_site == 3284,]$station = "405234"
+site.station_date_range[site.station_date_range$id_site == 3285,]$station = "405234"
+site.station_date_range[site.station_date_range$id_site == 3287,]$station = "405234"
+site.station_date_range[site.station_date_range$id_site == 3268,]$station = "405228"
+site.station_date_range[site.station_date_range$id_site == 3213,]$station = "405228"
+site.station_date_range[site.station_date_range$id_site == 3142,]$station = "414214"
+site.station_date_range[site.station_date_range$id_site == 3144,]$station = "414214"
+site.station_date_range[site.station_date_range$id_site == 3146,]$station = "414214"
+site.station_date_range[site.station_date_range$id_site == 3147,]$station = "414214"
+site.station_date_range[site.station_date_range$id_site == 3149,]$station = "414214"
+site.station_date_range[site.station_date_range$id_site == 3152,]$station = "414214"
+site.station_date_range[site.station_date_range$id_site == 3125,]$station = "414229"
+site.station_date_range[site.station_date_range$id_site == 3126,]$station = "414229"
+site.station_date_range[site.station_date_range$id_site == 3127,]$station = "414229"
+site.station_date_range[site.station_date_range$id_site == 3129,]$station = "414229"
+site.station_date_range[site.station_date_range$id_site == 3130,]$station = "414229"
+
+
+
+
 
 ##==========================================================================================================================================
 
