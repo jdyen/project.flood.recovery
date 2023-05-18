@@ -77,6 +77,13 @@ catch.sp <- catch.sp %>% select(c('id_site', 'scientific_name', 'catch')) %>% gr
 catch.sp <- catch.sp %>% collect()
 catch.sp <- catch.sp[catch.sp$catch_total > 0,]
 
+#need to add wetmap data
+catch.sp_wetmap <- fetch_query( "SELECT id_site, scientific_name, catch_total FROM projects.v_floods_wetmap_sp_catch", collect = TRUE)
+
+catch.sp <- rbind(catch.sp, catch.sp_wetmap)
+
+remove(catch.sp_wetmap)
+
 ##==========================================================================================================================================
 
 #filter current dataset for sp available to the site
