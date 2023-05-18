@@ -27,6 +27,14 @@ catch.cpue <- fetch_cpue(projects_to_use)
 catch.cpue <- catch.cpue %>% filter(survey_year >= min_yr & waterbody %in% !!waterbodies$waterbody & id_site %in% !!site.list$id_site)
 catch.cpue <- catch.cpue %>% collect()
 
+#.......... include wetmap cpue data ...........................................................................................................
+catch.cpue_wetmap <- fetch_query( "SELECT id_site::integer, waterbody, site_name, id_project, survey_year, survey_date, scientific_name, cpue FROM projects.v_floods_wetmap_cpue", collect = TRUE)
+
+catch.cpue <- catch.cpue[,c("id_site", "waterbody", "site_name", "id_project", "survey_year", "survey_date", "scientific_name", "cpue")]
+catch.cpue <- rbind(catch.cpue, catch.cpue_wetmap)
+remove(catch.cpue_wetmap)
+#.................................................................................................................................................
+
 #inner join the analysis sites df and the cpue df to only retain relevant data
 catch.cpue <- inner_join(catch.cpue, site.ba_years[,c('id_site', 'yr', 'id_project', 'rank')], by = c('id_site', "survey_year" = 'yr', 'id_project')) 
 
@@ -34,6 +42,7 @@ catch.cpue <- inner_join(catch.cpue, site.ba_years[,c('id_site', 'yr', 'id_proje
 catch.cpue$rank<- as.factor(catch.cpue$rank)
 
 str(catch.cpue)
+
 
 ##==========================================================================================================================================
 
