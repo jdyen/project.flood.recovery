@@ -68,7 +68,6 @@ site.station_date_range[site.station_date_range$id_site == 4145,]$station = "404
 site.station_date_range[site.station_date_range$id_site == 1334,]$station = "405200"
 site.station_date_range[site.station_date_range$id_site == 1535,]$station = "405204"
 site.station_date_range[site.station_date_range$id_site == 1536,]$station = "405270"
-site.station_date_range[site.station_date_range$id_site == 3115,]$station = "405209"
 
 ##==========================================================================================================================================
 
