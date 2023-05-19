@@ -114,7 +114,7 @@ while (i <= nrow(date_groups))
     end = min(station_set$max_sdate),
     variables = c("discharge"), #, "level"),
     options = list(varfrom = c("100.00"),  varto = c("141.00")),
-    data_source = station_set$source,
+    data_source = unique(station_set$source),
     # include_missing = TRUE,
     state = "vic"
   )
