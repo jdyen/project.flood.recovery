@@ -99,8 +99,8 @@ catch.lw_tc <- catch.lw_filtered[catch.lw_filtered$scientific_name == "Macculloc
 catch.lw_tc$yoy <- ifelse(catch.lw_tc$length_cm >= 13, "No", "Yes")
 
 #Macquarie Perch
-# catch.lw_mp <- catch.lw_filtered[catch.lw_filtered$scientific_name == "Macquaria australasica", c('id_site', 'survey_year', 'id_project', 'scientific_name', 'length_cm', 'weight_g', 'rank' )]
-# catch.lw_mp$yoy <- ifelse(catch.lw_mp$length_cm >= 10, "No", "Yes")
+catch.lw_mp <- catch.lw_filtered[catch.lw_filtered$scientific_name == "Macquaria australasica", c('id_site', 'survey_year', 'id_project', 'scientific_name', 'length_cm', 'weight_g', 'rank' )]
+catch.lw_mp$yoy <- ifelse(catch.lw_mp$length_cm >= 10, "No", "Yes")
 
 #Blackfish
 catch.lw_bf <- catch.lw_filtered[catch.lw_filtered$scientific_name == "Gadopsis marmoratus", c('id_site', 'survey_year', 'id_project', 'scientific_name', 'length_cm', 'weight_g', 'rank' )]
@@ -117,6 +117,7 @@ catch.lw_cc$yoy <- ifelse(catch.lw_cc$fork_length_cm >= 15, "No", "Yes")
 #Reformat the species dataset to append to the main flood data frame (see data_collect)
 catch.lw_mc <- reformat_sp_recruit(catch.lw_mc)
 catch.lw_tc <- reformat_sp_recruit(catch.lw_tc)
+catch.lw_mp <- reformat_sp_recruit(catch.lw_mp)
 catch.lw_bf <- reformat_sp_recruit(catch.lw_bf)
 catch.lw_cc <- reformat_sp_recruit(catch.lw_cc)
 
