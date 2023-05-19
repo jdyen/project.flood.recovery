@@ -66,11 +66,24 @@ site.station_date_range[site.station_date_range$id_site == 4283,]$station = "409
 site.station_date_range[site.station_date_range$id_site == 4286,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4145,]$station = "404214"
 
-site.station_date_range[site.station_date_range$id_site == 1334,]$station = "405200"
-site.station_date_range[site.station_date_range$id_site == 1535,]$station = "405204"
 site.station_date_range[site.station_date_range$id_site == 1536,]$station = "405270"
 site.station_date_range[site.station_date_range$id_site == 3157,]$station = "403200"
 site.station_date_range[site.station_date_range$id_site == 3164,]$station = "403205"
+
+#Lindsay River
+site.station_date_range[site.station_date_range$id_site == 3125,]$station = "414212"
+site.station_date_range[site.station_date_range$id_site == 3125,]$source = "A"
+site.station_date_range[site.station_date_range$id_site == 3126,]$station = "414212"
+site.station_date_range[site.station_date_range$id_site == 3126,]$source = "A"
+site.station_date_range[site.station_date_range$id_site == 3127,]$station = "414212"
+site.station_date_range[site.station_date_range$id_site == 3127,]$source = "A"
+site.station_date_range[site.station_date_range$id_site == 3129,]$station = "414212"
+site.station_date_range[site.station_date_range$id_site == 3129,]$source = "A"
+site.station_date_range[site.station_date_range$id_site == 3130,]$station = "414212"
+site.station_date_range[site.station_date_range$id_site == 3130,]$source = "A"
+
+
+#Mullaroo Creek
 site.station_date_range[site.station_date_range$id_site == 3142,]$station = "414211"
 site.station_date_range[site.station_date_range$id_site == 3144,]$station = "414211"
 site.station_date_range[site.station_date_range$id_site == 3146,]$station = "414211"
@@ -86,8 +99,27 @@ site.station_date_range[site.station_date_range$id_site == 3287,]$station = "405
 site.station_date_range[site.station_date_range$id_site == 3268,]$station = "405228"
 site.station_date_range[site.station_date_range$id_site == 3213,]$station = "405228"
 
+# Goulburn Site
+site.station_date_range[site.station_date_range$id_site == 1536,]$station = "405204"
+site.station_date_range[site.station_date_range$id_site == 1334,]$station = "405200"
+site.station_date_range[site.station_date_range$id_site == 1535,]$station = "405204"
 
+#Ovens
+site.station_date_range[site.station_date_range$id_site == 3156,]$station = "403241"
 
+#Sevens
+site.station_date_range[site.station_date_range$id_site == 3286,]$station = "405234"
+
+#Gunbower Creek
+site.station_date_range[site.station_date_range$id_site == 3115,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3117,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3118,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3119,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3120,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3121,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3122,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3123,]$station = "409207"
+site.station_date_range[site.station_date_range$id_site == 3124,]$station = "409207"
 
 
 
@@ -107,19 +139,23 @@ i = 1
 while (i <= nrow(date_groups))
 {
   station_set <- station.date_range[station.date_range$yr_m_group == date_groups$yr_m_group[i],]
-  
-  flow_data <- fetch_hydro(
-    sites = station_set$station,
-    start = min(station_set$min_sdate),
-    end = min(station_set$max_sdate),
-    variables = c("discharge"), #, "level"),
-    options = list(varfrom = c("100.00"),  varto = c("141.00")),
-    data_source = unique(station_set$source),
-    # include_missing = TRUE,
-    state = "vic"
-  )
+  sources <- data.frame(unique(station_set$source))
 
-  all_flow_data <- rbind(all_flow_data, flow_data)
+  for(j in 1:nrow(sources)){
+  
+    flow_data <- fetch_hydro(
+      sites = station_set$station,
+      start = min(station_set$min_sdate),
+      end = min(station_set$max_sdate),
+      variables = c("discharge"), #, "level"),
+      options = list(varfrom = c("100.00"),  varto = c("141.00")),
+      data_source = sources[j,],
+      # include_missing = TRUE,
+      state = "vic"
+    )
+
+    all_flow_data <- rbind(all_flow_data, flow_data)
+  }
   i = i + 1
 }
 
