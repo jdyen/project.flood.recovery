@@ -44,6 +44,7 @@ collect = FALSE)
 #collect the data
 site.station_date_range <- site.station_date_range %>% collect()
 site.station_date_range$station <- as.character(site.station_date_range$station)
+site.station_date_range$source <- "TELEM"
 
 ##==========================================================================================================================================
 
@@ -93,7 +94,7 @@ site.station_date_range[site.station_date_range$id_site == 3213,]$station = "405
 ##==========================================================================================================================================
 
 # Find the common date ranges for the stations
-station.date_range <- select(site.station_date_range, station, yr_m_group, min_sdate,  max_sdate) %>% group_by(station, yr_m_group, min_sdate,  max_sdate) %>% summarise()
+station.date_range <- select(site.station_date_range, station, yr_m_group, min_sdate,  max_sdate, source) %>% group_by(station, yr_m_group, min_sdate,  max_sdate, source) %>% summarise()
 
 #List the common date ranges to collect
 date_groups <- station.date_range %>% select(yr_m_group) %>% group_by(yr_m_group) %>% summarise()
@@ -113,7 +114,7 @@ while (i <= nrow(date_groups))
     end = min(station_set$max_sdate),
     variables = c("discharge"), #, "level"),
     options = list(varfrom = c("100.00"),  varto = c("141.00")),
-    data_source = "TELEM",
+    data_source = station_set$source,
     # include_missing = TRUE,
     state = "vic"
   )
