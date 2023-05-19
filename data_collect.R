@@ -29,10 +29,12 @@ check_row_counts <- function(count1, count2, error_message){
 
 populate_recruit_data <- function(flood_data_table, recruit_table){
   
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$before_1plus = recruit_table[['before_1plus']]
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$after_1plus = recruit_table[['after_1plus']]
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$before_yoy = recruit_table[['before_yoy']]
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name == recruit_table$scientific_name,]$after_yoy = recruit_table[['after_yoy']]
+  recruit_table <- inner_join(flood_data_table[,c('id_site', 'scientific_name')], recruit_table, by = c('id_site', 'scientific_name'))
+  
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$before_1plus = recruit_table[['before_1plus']]
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$after_1plus = recruit_table[['after_1plus']]
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$before_yoy = recruit_table[['before_yoy']]
+  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$after_yoy = recruit_table[['after_yoy']]
   pop_recruit_data <- flood_data_table
   
 }
@@ -135,17 +137,17 @@ flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site'
 ### Run code in recruit_data_collect.R to generate before/after yoy counts for sites
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-flood_data_ba$before_1plus = as.integer(NA)
-flood_data_ba$after_1plus = as.integer(NA)
-flood_data_ba$before_yoy = as.integer(NA)
-flood_data_ba$after_yoy = as.integer(NA)
+flood_data_ba$before_1plus = as.integer(0)
+flood_data_ba$after_1plus = as.integer(0)
+flood_data_ba$before_yoy = as.integer(0)
+flood_data_ba$after_yoy = as.integer(0)
 
 # Merge before/after recruit data
 flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_mc)
 flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_tc)
+flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_mp)
 flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_bf)
 flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_cc)
-
 
 ##==========================================================================================================================================
 ##=========================================== FLOOD IMPACT CATEGORIES ======================================================================
