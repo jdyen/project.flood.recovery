@@ -84,17 +84,7 @@ site.station_date_range[site.station_date_range$id_site == 3285,]$station = "405
 site.station_date_range[site.station_date_range$id_site == 3287,]$station = "405234"
 site.station_date_range[site.station_date_range$id_site == 3268,]$station = "405228"
 site.station_date_range[site.station_date_range$id_site == 3213,]$station = "405228"
-site.station_date_range[site.station_date_range$id_site == 3142,]$station = "414214"
-site.station_date_range[site.station_date_range$id_site == 3144,]$station = "414214"
-site.station_date_range[site.station_date_range$id_site == 3146,]$station = "414214"
-site.station_date_range[site.station_date_range$id_site == 3147,]$station = "414214"
-site.station_date_range[site.station_date_range$id_site == 3149,]$station = "414214"
-site.station_date_range[site.station_date_range$id_site == 3152,]$station = "414214"
-site.station_date_range[site.station_date_range$id_site == 3125,]$station = "414229"
-site.station_date_range[site.station_date_range$id_site == 3126,]$station = "414229"
-site.station_date_range[site.station_date_range$id_site == 3127,]$station = "414229"
-site.station_date_range[site.station_date_range$id_site == 3129,]$station = "414229"
-site.station_date_range[site.station_date_range$id_site == 3130,]$station = "414229"
+
 
 
 
