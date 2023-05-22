@@ -122,6 +122,23 @@ site.station_date_range[site.station_date_range$id_site == 3123,]$station = "409
 site.station_date_range[site.station_date_range$id_site == 3124,]$station = "409207"
 
 
+#Catfish Lagoon 
+site.station_date_range[site.station_date_range$id_site == 4439,]$station = "414207"
+site.station_date_range[site.station_date_range$id_site == 4441,]$station = "414207"
+site.station_date_range[site.station_date_range$id_site == 4442,]$station = "414207"
+site.station_date_range[site.station_date_range$id_site == 4440,]$station = "414207"
+
+#Duckfoots Lagoon 
+site.station_date_range[site.station_date_range$id_site == 4443,]$station = "414702"
+site.station_date_range[site.station_date_range$id_site == 4444,]$station = "414702"
+site.station_date_range[site.station_date_range$id_site == 4445,]$station = "414702"
+site.station_date_range[site.station_date_range$id_site == 4446,]$station = "414702"
+
+#Margooya Lagoon 
+site.station_date_range[site.station_date_range$id_site == 4447,]$station = "414203"
+site.station_date_range[site.station_date_range$id_site == 4448,]$station = "414203"
+site.station_date_range[site.station_date_range$id_site == 4449,]$station = "414203"
+site.station_date_range[site.station_date_range$id_site == 4450,]$station = "414203"
 
 ##==========================================================================================================================================
 
