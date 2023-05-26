@@ -27,6 +27,8 @@ flood_data_ba$waterbody =as.factor(flood_data_ba$waterbody)
 flood_data_ba$scientific_name = as.factor(flood_data_ba$scientific_name)
 flood_data_ba$id_site = as.factor(flood_data_ba$id_site)
 
+#duplicate data in case 
+flood_data_ba_wide<- flood_data_ba
 
 
 ### Need to convert the flood_data_ba data set into long format
