@@ -18,6 +18,8 @@ library(bbmle)
 library(corrplot)
 library(Hmisc)
 library(lmerTest)
+library(rstanarm)
+
 
 #read in data as dataframe 
 flood_data_ba <- as.data.frame(flood_data_ba)
@@ -44,6 +46,10 @@ flood_data_ba <- flood_data_ba |>
     values_from = value
   )
 
+#reorganise so in right order when getting bayesian outputs 
+flood_data_ba|>
+  mutate(before_after = factor(before_after, levels=(c("before", "after"))))
+         
 ## but we also need to rescale discharge relative to each waterbody
 average_discharge <- flood_data_ba |>
   group_by(waterbody) |>
@@ -55,16 +61,37 @@ flood_data_ba <- flood_data_ba |>
   mutate(
     discharge_std = discharge / average_discharge,
     log_cpue_p1 = log(cpue + 1)
-  )
+    )
 
 #first test model 
 flood_model_lmer_ba <- lmerTest::lmer(
   log_cpue_p1 ~ before_after * hypoxia_rank * scientific_name +
     discharge_std +
     (1 | site_name),
-  data = flood_data_ba
-)
+  data = flood_data_ba)
+
 summary(flood_model_lmer_ba)
 #problem with rank deficient, need to do something about zero's in data
 #may need to use Bayesian model structure 
+plot(flood_model_lmer_ba)
+flood_model_lmer_aov<-Anova(flood_model_lmer_ba, "III")
+flood_model_lmer_aov
+
+
+#bayesian model attempt
+
+##TAKES TIME TO RUN
+
+flood_model_stanlmer_jian <- stan_lmer(
+  log_cpue_p1 ~ before_after * hypoxia_rank * scientific_name +
+    discharge_std +
+    (1 | waterbody) + (1 | site_name),
+  data = flood_data_ba)
+
+summary(flood_model_stanlmer_jian)
+
+plot(flood_model_stanlmer_jian, regex_pars = "before:hypoxia")
+
+
+
 
