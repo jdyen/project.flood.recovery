@@ -129,10 +129,10 @@ site.station_date_range[site.station_date_range$id_site == 4442,]$station = "414
 site.station_date_range[site.station_date_range$id_site == 4440,]$station = "414207"
 
 #Duckfoots Lagoon 
-site.station_date_range[site.station_date_range$id_site == 4443,]$station = "414702"
-site.station_date_range[site.station_date_range$id_site == 4444,]$station = "414702"
-site.station_date_range[site.station_date_range$id_site == 4445,]$station = "414702"
-site.station_date_range[site.station_date_range$id_site == 4446,]$station = "414702"
+site.station_date_range[site.station_date_range$id_site == 4443,]$station = "414207"
+site.station_date_range[site.station_date_range$id_site == 4444,]$station = "414207"
+site.station_date_range[site.station_date_range$id_site == 4445,]$station = "414207"
+site.station_date_range[site.station_date_range$id_site == 4446,]$station = "414207"
 
 #Margooya Lagoon 
 site.station_date_range[site.station_date_range$id_site == 4447,]$station = "414203"
