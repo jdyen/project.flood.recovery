@@ -91,7 +91,7 @@ flood_model_stanlmer_jian <- stan_lmer(
 
 summary(flood_model_stanlmer_jian)
 
-plot(flood_model_stanlmer_jian, regex_pars = "before:hypoxia")
+plot(flood_model_stanlmer_jian, regex_pars = "after:hypoxia")
 
 
 
