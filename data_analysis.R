@@ -47,9 +47,10 @@ flood_data_ba <- flood_data_ba |>
   )
 
 #reorganise so in right order when getting bayesian outputs 
-flood_data_ba|>
+flood_data_ba <- flood_data_ba|>
   mutate(before_after = factor(before_after, levels=(c("before", "after"))))
-         
+
+
 ## but we also need to rescale discharge relative to each waterbody
 average_discharge <- flood_data_ba |>
   group_by(waterbody) |>
