@@ -4,6 +4,7 @@
 
 ## Plots looking at the raw data 
 
+
 #cpue 
 cpueplot<-flood_data_ba |>
   ggplot(aes(y = cpue, x = hypoxia_rank, fill = before_after)) +
