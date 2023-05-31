@@ -84,6 +84,7 @@ flood_model_lmer_aov
 
 ##TAKES TIME TO RUN
 
+#cpue
 flood_model_stanlmer_jian <- stan_lmer(
   log_cpue_p1 ~ before_after * hypoxia_rank +
     (before_after * hypoxia_rank | scientific_name) +
@@ -97,6 +98,35 @@ plot(flood_model_stanlmer_jian, regex_pars = "after:hypoxia")
 
 dat <- ggpredict(flood_model_stanlmer_jian, terms = c("before_after", "hypoxia_rank", "scientific_name"))
 plot(dat, facet = TRUE, add.data = TRUE, connect.lines = TRUE)
+
+
+##yoy
+
+
+flood_model_stanlmer_yoy <- stan_lmer(
+  yoy ~ before_after * hypoxia_rank +
+    (before_after * hypoxia_rank | scientific_name) +
+    discharge_std +
+    (1 | waterbody) + (1 | site_name),
+  data = flood_data_ba)
+
+summary(flood_model_stanlmer_yoy)
+
+plot(flood_model_stanlmer_yoy, regex_pars = "after:hypoxia")
+
+
+## just adults 
+
+flood_model_stanlmer_adult <- stan_lmer(
+  `1plus` ~ before_after * hypoxia_rank +
+    (before_after * hypoxia_rank | scientific_name) +
+    discharge_std +
+    (1 | waterbody) + (1 | site_name),
+  data = flood_data_ba)
+
+summary(flood_model_stanlmer_adult)
+
+plot(flood_model_stanlmer_adult, regex_pars = "after:hypoxia")
 
 
 
