@@ -29,13 +29,16 @@ check_row_counts <- function(count1, count2, error_message){
 
 populate_recruit_data <- function(flood_data_table, recruit_table){
   
-  recruit_table <- inner_join(flood_data_table[,c('id_site', 'scientific_name')], recruit_table, by = c('id_site', 'scientific_name'))
+  flood_data_table <- flood_data_table %>% 
+    left_join(recruit_table[,c('id_site', 'scientific_name', 'before_after', 'plus1', 'yoy')], by = c('id_site', 'scientific_name', 'before_after')) %>% 
+    mutate(plus1.x = ifelse(!is.na(plus1.y),plus1.y, plus1.x), yoy.x = ifelse(!is.na(yoy.y),yoy.y, yoy.x))
   
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$before_1plus = recruit_table[['before_1plus']]
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$after_1plus = recruit_table[['after_1plus']]
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$before_yoy = recruit_table[['before_yoy']]
-  flood_data_table[flood_data_table$id_site %in% recruit_table$id_site & flood_data_table$scientific_name %in% recruit_table$scientific_name,]$after_yoy = recruit_table[['after_yoy']]
-  pop_recruit_data <- flood_data_table
+  flood_data_table <-flood_data_table %>% select(-ends_with('.y'))
+  colnames(flood_data_table)[colnames(flood_data_table) == 'plus1.x'] <- 'plus1'
+  colnames(flood_data_table)[colnames(flood_data_table) == 'yoy.x'] <- 'yoy'  
+  
+  
+  populate_recruit_data <- flood_data_table
   
 }
 
@@ -54,6 +57,8 @@ site.ba_years <- fetch_query(
 
 #collect the data
 site.ba_years <- site.ba_years %>% collect()
+
+site.ba_years$before_after <- ifelse(site.ba_years$rank == 1, 'after', 'before')
 
 # Get the waterbodies from the current dataset to use in species filter
 waterbodies <- as.data.frame(distinct(site.ba_years, waterbody))
@@ -94,7 +99,7 @@ flood_data_ba <- inner_join(site.ba_years, catch.sp[,c('id_site', 'scientific_na
 #filter current dataset to focal species
 flood_data_ba <- flood_data_ba[flood_data_ba$scientific_name %in% sp,]
 
-flood_data_ba <- select(flood_data_ba, c('id_site', 'site_name', 'waterbody', 'id_project','scientific_name')) %>% group_by(id_site, site_name, waterbody, id_project, scientific_name) %>% summarise()
+flood_data_ba <- select(flood_data_ba, c('id_site', 'site_name', 'waterbody', 'id_project','scientific_name', 'before_after')) %>% group_by(id_site, site_name, waterbody, id_project, scientific_name, before_after) %>% summarise()
 
 ##==========================================================================================================================================
 
@@ -113,7 +118,7 @@ site.list <- flood_data_ba %>% group_by(id_site, waterbody) %>% summarise()
 print(check_row_counts(nrow(site.list), nrow(catch.cpue_ba %>% group_by(id_site) %>% summarise()), "MISSING SITEs catch.cpue_ba" ))
 
 # Merge before/after discharge data (can make this a LEFT join to include existing site species absent from BA surveys)
-flood_data_ba <- inner_join(flood_data_ba, catch.cpue_ba[,c('id_site', 'scientific_name', 'before_cpue', 'after_cpue')], by = c('id_site', 'scientific_name'))
+flood_data_ba <- inner_join(flood_data_ba, catch.cpue_ba[,c('id_site', 'scientific_name', 'before_after', 'gear_type', 'effort_h', 'catch', 'cpue')], by = c('id_site', 'scientific_name', 'before_after'))
 
 ##==========================================================================================================================================
 ##=========================================== DISCHARGE DATA ===============================================================================
@@ -127,7 +132,7 @@ flood_data_ba <- inner_join(flood_data_ba, catch.cpue_ba[,c('id_site', 'scientif
 print(check_row_counts(nrow(site.list), nrow(all_site.water_data %>% group_by(id_site) %>% summarise()), "MISSING SITEs in all_site.water_data" ))
 
 # Merge before/after discharge data
-flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site'))
+flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site', 'before_after'))
 
 ##==========================================================================================================================================
 ##=========================================== RECRUIT DATA ===============================================================================
@@ -137,10 +142,8 @@ flood_data_ba <- inner_join(flood_data_ba, all_site.water_data, by = c('id_site'
 ### Run code in recruit_data_collect.R to generate before/after yoy counts for sites
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-flood_data_ba$before_1plus = as.integer(0)
-flood_data_ba$after_1plus = as.integer(0)
-flood_data_ba$before_yoy = as.integer(0)
-flood_data_ba$after_yoy = as.integer(0)
+flood_data_ba$plus1 = as.integer(NA)
+flood_data_ba$yoy = as.integer(NA)
 
 # Merge before/after recruit data
 flood_data_ba <- populate_recruit_data(flood_data_ba, catch.lw_mc)

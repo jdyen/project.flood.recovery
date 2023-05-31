@@ -206,13 +206,12 @@ remove(flow_data)
 site.water_data <- left_join(site.station_date_range, all_flow_data, by = c('station' = 'site_code'), relationship = "many-to-many") %>% filter(between(date_formatted, min_sdate, max_sdate))
 
 # create summary stats of the water data per site (mean is used only)
-site.water_data <- site.water_data[site.water_data$variable_code ==  "141.00",] %>% select(id_site, variable_name, value, min_sdate) %>% mutate(yr= as.integer(format(min_sdate, format="%Y"))) %>% group_by(id_site, variable_name, yr) %>% summarise(min=min(value), max = max(value), mn= mean(value), range = max(value)-min(value), .groups = "keep") %>% add_count( name = "gauge_count") 
+site.water_data <- site.water_data[site.water_data$variable_code ==  "141.00",] %>% select(id_site, variable_name, value, min_sdate) %>% mutate(yr= as.integer(format(min_sdate, format="%Y"))) %>% group_by(id_site, variable_name, yr) %>% summarise(min=min(value), max = max(value), discharge= mean(value), range = max(value)-min(value), .groups = "keep") %>% add_count( name = "gauge_count") 
 
 # rank the sites and year to determine before and after water data
 site.water_data <- site.water_data %>% group_by(id_site) %>% mutate(rank = rank(yr))
-site.water_data$dis_ba = ifelse(site.water_data$rank == 1,"before_discharge","after_discharge")
+site.water_data$before_after = ifelse(site.water_data$rank == 1,"before","after")
 
-#pivot the water data for separate before/after discharge columns
-all_site.water_data = pivot_wider(site.water_data[,c("id_site", "mn", "dis_ba")], names_from = dis_ba, values_from = mn)
+all_site.water_data <- site.water_data[, c('id_site', 'before_after', 'discharge') ]
 
 #==============================================================================================================================
