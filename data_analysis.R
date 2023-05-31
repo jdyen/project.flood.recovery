@@ -95,12 +95,8 @@ summary(flood_model_stanlmer_jian)
 
 plot(flood_model_stanlmer_jian, regex_pars = "after:hypoxia")
 
-<<<<<<< HEAD
-=======
-
 dat <- ggpredict(flood_model_stanlmer_jian, terms = c("before_after", "hypoxia_rank", "scientific_name"))
 plot(dat, facet = TRUE, add.data = TRUE, connect.lines = TRUE)
->>>>>>> 68fd2634f48ba7c1fc8d1b899cc9780266c9a23f
 
 
 
