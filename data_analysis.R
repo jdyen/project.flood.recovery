@@ -35,17 +35,17 @@ flood_data_ba_wide<- flood_data_ba
 
 
 ### Need to convert the flood_data_ba data set into long format
-flood_data_ba <- flood_data_ba |>
-  pivot_longer(cols = c(contains("before_"), contains("after_"))) |>
-  mutate(
-    before_after = sapply(strsplit(name, "_"), \(x) x[[1]]),
-    variable = sapply(strsplit(name, "_"), \(x) x[[2]])
-  ) |>
-  pivot_wider(
-    id_cols = c(id_site, site_name, waterbody, id_project, scientific_name, impact_type, hypoxia_rank, before_after),
-    names_from = variable,
-    values_from = value
-  )
+# flood_data_ba <- flood_data_ba |>
+#   pivot_longer(cols = c(contains("before_"), contains("after_"))) |>
+#   mutate(
+#     before_after = sapply(strsplit(name, "_"), \(x) x[[1]]),
+#     variable = sapply(strsplit(name, "_"), \(x) x[[2]])
+#   ) |>
+#   pivot_wider(
+#     id_cols = c(id_site, site_name, waterbody, id_project, scientific_name, impact_type, hypoxia_rank, before_after),
+#     names_from = variable,
+#     values_from = value
+#   )
 
 #reorganise so in right order when getting bayesian outputs 
 flood_data_ba <- flood_data_ba|>
