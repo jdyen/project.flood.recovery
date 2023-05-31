@@ -32,10 +32,10 @@ id_site,impact_type,hypoxia_rank
 1334,blackwater,L
 1340,blackwater,L
 1341,blackwater,L
-1342,blackwater,L
-1343,blackwater,L
-1344,blackwater,L
-1345,blackwater,M
+1342,blackwater,H
+1343,blackwater,M
+1344,blackwater,M
+1345,blackwater,H
 1357,blackwater,M
 1363,blackwater,M
 1365,blackwater,M
@@ -57,7 +57,7 @@ id_site,impact_type,hypoxia_rank
 1528,blackwater,M
 1529,blackwater,L
 1530,blackwater,L
-1531,blackwater,L
+1531,blackwater,H
 1532,blackwater,L
 1533,blackwater,L
 1534,blackwater,L
