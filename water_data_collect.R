@@ -19,7 +19,7 @@ library(lubridate)
 site.station_date_range <- fetch_query(
   "WITH base as (
 	SELECT id_site, station, min_distance_m, dist_rank
-	FROM stream_network.v_aae_site_closest_gauges
+	FROM projects.v_floods_closest_gauges_ranked
 		WHERE dist_rank = 1
 	)
 , date_groups as (
@@ -60,15 +60,20 @@ site.station_date_range[site.station_date_range$station == "406264",]$station = 
 site.station_date_range[site.station_date_range$id_site == 1521,]$station = "409399"
 site.station_date_range[site.station_date_range$id_site == 4065,]$station = "404227"
 # site.station_date_range[site.station_date_range$id_site == c(4281, 4282, 4283, 4286),] = "409202"
-site.station_date_range[site.station_date_range$id_site == 4281,]$station = "409202"
-site.station_date_range[site.station_date_range$id_site == 4282,]$station = "409202"
-site.station_date_range[site.station_date_range$id_site == 4283,]$station = "409202"
-site.station_date_range[site.station_date_range$id_site == 4286,]$station = "409202"
 site.station_date_range[site.station_date_range$id_site == 4145,]$station = "404214"
 
 site.station_date_range[site.station_date_range$id_site == 1536,]$station = "405270"
 site.station_date_range[site.station_date_range$id_site == 3157,]$station = "403200"
 site.station_date_range[site.station_date_range$id_site == 3164,]$station = "403205"
+
+#Barmah
+site.station_date_range[site.station_date_range$id_site == 4281,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4282,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4283,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4286,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4284,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4285,]$station = "409202"
+site.station_date_range[site.station_date_range$id_site == 4288,]$station = "409202"
 
 #Lindsay River
 site.station_date_range[site.station_date_range$id_site == 3125,]$station = "414212"
@@ -103,6 +108,8 @@ site.station_date_range[site.station_date_range$id_site == 3213,]$station = "405
 site.station_date_range[site.station_date_range$id_site == 1536,]$station = "405204"
 site.station_date_range[site.station_date_range$id_site == 1334,]$station = "405200"
 site.station_date_range[site.station_date_range$id_site == 1535,]$station = "405204"
+site.station_date_range[site.station_date_range$id_site == 1530,]$station = "405204"
+site.station_date_range[site.station_date_range$id_site == 1531,]$station = "405232"
 
 #Ovens
 site.station_date_range[site.station_date_range$id_site == 3156,]$station = "403241"
@@ -110,7 +117,7 @@ site.station_date_range[site.station_date_range$id_site == 3156,]$station = "403
 #Sevens
 site.station_date_range[site.station_date_range$id_site == 3286,]$station = "405234"
 
-#Gunbower Creek
+#Gunbower Creek - would prefer to refine
 site.station_date_range[site.station_date_range$id_site == 3115,]$station = "409207"
 site.station_date_range[site.station_date_range$id_site == 3117,]$station = "409207"
 site.station_date_range[site.station_date_range$id_site == 3118,]$station = "409207"
@@ -139,6 +146,21 @@ site.station_date_range[site.station_date_range$id_site == 4447,]$station = "414
 site.station_date_range[site.station_date_range$id_site == 4448,]$station = "414203"
 site.station_date_range[site.station_date_range$id_site == 4449,]$station = "414203"
 site.station_date_range[site.station_date_range$id_site == 4450,]$station = "414203"
+
+#Loddon River
+site.station_date_range[site.station_date_range$id_site == 1357,]$station = "407224"
+site.station_date_range[site.station_date_range$id_site == 1363,]$station = "407205"
+site.station_date_range[site.station_date_range$id_site == 1365,]$station = "407205"
+site.station_date_range[site.station_date_range$id_site == 1366,]$station = "407202"
+site.station_date_range[site.station_date_range$id_site == 1517,]$station = "407202"
+site.station_date_range[site.station_date_range$id_site == 1518,]$station = "407202"
+
+#Mid Murray
+site.station_date_range[site.station_date_range$id_site == 4261,]$station = "409207"  # would prefer to refine
+site.station_date_range[site.station_date_range$id_site == 4263,]$station = "409204"
+site.station_date_range[site.station_date_range$id_site == 4265,]$station = "414201"
+site.station_date_range[site.station_date_range$id_site == 4264,]$station = "414201"
+
 
 ##==========================================================================================================================================
 
@@ -190,7 +212,7 @@ site.water_data <- site.water_data[site.water_data$variable_code ==  "141.00",] 
 site.water_data <- site.water_data %>% group_by(id_site) %>% mutate(rank = rank(yr))
 site.water_data$dis_ba = ifelse(site.water_data$rank == 1,"before_discharge","after_discharge")
 
-#pivot the water data for seperate before/after discharge columns
+#pivot the water data for separate before/after discharge columns
 all_site.water_data = pivot_wider(site.water_data[,c("id_site", "mn", "dis_ba")], names_from = dis_ba, values_from = mn)
 
 #==============================================================================================================================

@@ -19,6 +19,7 @@ library(corrplot)
 library(Hmisc)
 library(lmerTest)
 library(rstanarm)
+library(ggeffects)
 
 
 #read in data as dataframe 
@@ -84,7 +85,8 @@ flood_model_lmer_aov
 ##TAKES TIME TO RUN
 
 flood_model_stanlmer_jian <- stan_lmer(
-  log_cpue_p1 ~ before_after * hypoxia_rank * scientific_name +
+  log_cpue_p1 ~ before_after * hypoxia_rank +
+    (before_after * hypoxia_rank | scientific_name) +
     discharge_std +
     (1 | waterbody) + (1 | site_name),
   data = flood_data_ba)
@@ -93,6 +95,12 @@ summary(flood_model_stanlmer_jian)
 
 plot(flood_model_stanlmer_jian, regex_pars = "after:hypoxia")
 
+<<<<<<< HEAD
+=======
+
+dat <- ggpredict(flood_model_stanlmer_jian, terms = c("before_after", "hypoxia_rank", "scientific_name"))
+plot(dat, facet = TRUE, add.data = TRUE, connect.lines = TRUE)
+>>>>>>> 68fd2634f48ba7c1fc8d1b899cc9780266c9a23f
 
 
 
