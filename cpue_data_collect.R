@@ -60,9 +60,6 @@ catch.cpue_ba <- catch.cpue_filtered
 catch.cpue_ba$before_after <- ifelse(catch.cpue_ba$rank == 1, 'after', 'before')
 catch.cpue_ba <- catch.cpue_ba[,c("id_site", "gear_type", "scientific_name", "before_after", "effort_h", "catch", "cpue")]
 
-#Compact the data to line up before and after cpue
-catch.cpue_ba <- catch.cpue_ba %>% select('id_site', 'waterbody', 'site_name',  'scientific_name', 'before_cpue', 'after_cpue' ) %>% group_by(id_site, waterbody, site_name, scientific_name) %>% summarise(before_cpue = max(before_cpue), after_cpue = max(after_cpue))
-
 #get a list of sites to check against site.list to make sure all sites are included
 catch.cpue_site_list <- catch.cpue_ba %>% group_by(id_site) %>% summarise()
 
