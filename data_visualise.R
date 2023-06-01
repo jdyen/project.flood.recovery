@@ -18,15 +18,31 @@ cpueplot<-flood_data_ba |>
 
 cpueplot
 
-#same scales across all species  
+# log cpue  
 cpueplot2<-flood_data_ba |>
-  ggplot(aes(y = cpue, x = hypoxia_rank, fill = before_after)) +
+  ggplot(aes(y = log_cpue_p1, x = hypoxia_rank, fill = before_after)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap( ~ scientific_name, scales = "fixed")+
   theme_bw()+
   theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),strip.text.y = element_blank(), legend.position = "right") 
 
 cpueplot2
+
+
+# using catch data not cpue 
+
+catchplot<-flood_data_ba |>
+  ggplot(aes(y = catch, x = hypoxia_rank, fill = before_after)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap( ~ scientific_name, scales = "fixed")+
+  scale_fill_manual(aesthetics = 'fill', values = c("#4FC3F7", "#E57373"), name="Legend")+
+  labs(x = "Hypoxia Rank", y = "Log cpue")+
+  theme_bw()+
+  theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),strip.text.y = element_blank(), legend.position = "right") 
+
+catchplot
+
+
 
 #yoy of focus species carp and cod 
 yoyplot<-flood_data_ba |> filter(scientific_name %in% c("Cyprinus carpio", "Maccullochella peelii")) |>
@@ -39,8 +55,8 @@ yoyplot<-flood_data_ba |> filter(scientific_name %in% c("Cyprinus carpio", "Macc
 yoyplot
 
 #1 year olds and older 
-plus1plot<-flood_data_ba |> 
-  ggplot(aes(y = `1plus`, x = hypoxia_rank, fill = before_after)) +
+plus1plot<-flood_data_ba |> filter(scientific_name %in% c("Cyprinus carpio", "Maccullochella peelii", "Gadopsis marmoratus", "Maccullochella macquariensis", "Macquaria australasica")) |>
+  ggplot(aes(y = plus1, x = hypoxia_rank, fill = before_after)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap( ~ scientific_name, scales = "free")+
   theme_bw()+
