@@ -29,11 +29,19 @@ check_row_counts <- function(count1, count2, error_message){
 
 populate_recruit_data <- function(flood_data_table, recruit_table){
   
+  site_sp_table <- recruit_table %>% group_by(id_site, scientific_name) %>% summarise()
+  site_sp_table$base_val = 0
+  
+  flood_data_table <- flood_data_table %>% 
+    left_join(site_sp_table, by = c('id_site', 'scientific_name')) %>% 
+    mutate(plus1 = ifelse(is.na(plus1) & !is.na(base_val) ,0, plus1), yoy = ifelse(is.na(yoy) & !is.na(base_val),0, yoy))
+  
   flood_data_table <- flood_data_table %>% 
     left_join(recruit_table[,c('id_site', 'scientific_name', 'before_after', 'plus1', 'yoy')], by = c('id_site', 'scientific_name', 'before_after')) %>% 
-    mutate(plus1.x = ifelse(!is.na(plus1.y),plus1.y, plus1.x), yoy.x = ifelse(!is.na(yoy.y),yoy.y, yoy.x))
-  
+    mutate(plus1.x = ifelse(!is.na(plus1.x) & is.na(plus1.y), plus1.x, ifelse(!is.na(plus1.y), plus1.y, NA)), yoy.x = ifelse(!is.na(yoy.x) & is.na(yoy.y),yoy.x, ifelse(!is.na(yoy.y), yoy.y, NA)))
+
   flood_data_table <-flood_data_table %>% select(-ends_with('.y'))
+  flood_data_table <-flood_data_table %>% select(-'base_val')
   colnames(flood_data_table)[colnames(flood_data_table) == 'plus1.x'] <- 'plus1'
   colnames(flood_data_table)[colnames(flood_data_table) == 'yoy.x'] <- 'yoy'  
   
