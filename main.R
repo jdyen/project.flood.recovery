@@ -11,6 +11,8 @@ library(brms)
 library(ggplot2)
 library(ggeffects)
 library(ragg)
+library(sf)
+library(ggspatial)
 
 # flag: do we want to refit the models?
 refit_models <- FALSE
@@ -291,7 +293,8 @@ site.water_data <- site.water_data |>
     discharge = mean(value), 
     range = max(value) - min(value), 
     .groups = "keep") |>
-  add_count(name = "gauge_count") 
+  add_count(name = "gauge_count") |>
+  ungroup()
 
 # rank the sites and year to determine before and after water data
 site.water_data <- site.water_data |> 
@@ -299,7 +302,8 @@ site.water_data <- site.water_data |>
   mutate(
     rank = rank(yr),
     before_after = ifelse(rank == 1, "before", "after")
-  )
+  ) |>
+  ungroup()
 
 # and just keep a few cols
 all_site.water_data <- site.water_data |> select(id_site, before_after, discharge)
@@ -420,10 +424,11 @@ if (!mods_available | refit_models) {
     brmsformula(
       catch ~ before_after * hypoxia_rank +
         (before_after * hypoxia_rank | scientific_name) +
+        (before_after * hypoxia_rank | waterbody) +
         discharge_std +
-        (1 | waterbody) + (1 | site_name) +
-        offset(effort_h)#,
-     # shape ~ (1 | waterbody) + (1 | scientific_name)
+        (1 | site_name) +
+        offset(effort_h),
+      shape ~ (1 | waterbody) + (1 | scientific_name)
     ),
     data = flood_data_ba,
     iter = 4000,
@@ -437,9 +442,10 @@ if (!mods_available | refit_models) {
     brmsformula(
       yoy ~ before_after * hypoxia_rank +
          (before_after * hypoxia_rank | scientific_name) +
-        discharge_std +
-        (1 | waterbody) + (1 | site_name) +
-        offset(effort_h),
+         (before_after * hypoxia_rank | waterbody) +
+         discharge_std +
+         (1 | site_name) +
+         offset(effort_h),
       shape ~ (1 | waterbody) + (1 | scientific_name)
     ),
     data = flood_data_ba,
@@ -531,6 +537,22 @@ spp_to_plot_yoy <- flood_data_ba |>
   ungroup() |>
   complete(scientific_name, hypoxia_rank, fill = list(include = FALSE))
 
+# species lookup
+species_lookup <- c(
+  "Bidyanus bidyanus" = "Silver Perch",
+  "Cyprinus carpio" = "Common Carp",
+  "Gadopsis bispinosus" = "Two-spined Blackfish",
+  "Gadopsis marmoratus" = "River Blackfish",
+  "Maccullochella macquariensis" = "Trout Cod",
+  "Maccullochella peelii" = "Murray Cod",
+  "Macquaria ambigua" = "Golden Perch",
+  "Macquaria australasica" = "Macquarie Perch",
+  "Melanotaenia fluviatilis" = "Murray-Darling Rainbowfish",
+  "Perca fluviatilis" = "European Perch",
+  "Retropinna semoni" = "Australian Smelt",
+  "Salmo trutta" = "Brown Trout"
+)
+
 # plot flood impacts
 cpue_change <- flood_impacts |>
   as_tibble() |>
@@ -542,7 +564,8 @@ cpue_change <- flood_impacts |>
       levels = c("L", "M", "H"),
       labels = c("Low", "Medium", "High")
     ),
-    x = factor(x, levels = c("before", "after"), labels = c("Before", "After"))
+    x = factor(x, levels = c("before", "after"), labels = c("Before", "After")),
+    facet = species_lookup[as.character(facet)]
   )
 cpue_plot_all <- ggplot() +
   geom_point(
@@ -574,7 +597,7 @@ cpue_plot_all <- ggplot() +
           levels = c("L", "M", "H"),
           labels = c("Low", "Medium", "High")
         ), 
-        facet = scientific_name,
+        facet = species_lookup[as.character(scientific_name)],
         before_after = factor(
           before_after,
           levels = c("before", "after"),
@@ -593,7 +616,8 @@ cpue_plot_all <- ggplot() +
   scale_colour_brewer(palette = "Set2", name = "Hypoxia impact") + 
   xlab("Time period") +
   ylab("CPUE") +
-  facet_wrap( ~ facet, scales = "free")
+  facet_wrap( ~ facet, scales = "free", ncol = 3) +
+  theme(legend.position = "bottom")
 
 # repeat for YOY
 cpue_change_yoy <- flood_impacts_yoy |>
@@ -606,7 +630,8 @@ cpue_change_yoy <- flood_impacts_yoy |>
       levels = c("L", "M", "H"),
       labels = c("Low", "Medium", "High")
     ),
-    x = factor(x, levels = c("before", "after"), labels = c("Before", "After"))
+    x = factor(x, levels = c("before", "after"), labels = c("Before", "After")),
+    facet = species_lookup[as.character(facet)]
   )
 cpue_plot_yoy <- ggplot() +
   geom_point(
@@ -632,7 +657,8 @@ cpue_plot_yoy <- ggplot() +
   ) +
   geom_point(
     data = flood_data_ba |> 
-      filter(scientific_name %in% cpue_change_yoy$facet) |>
+      mutate(scientific_name = species_lookup[as.character(scientific_name)]) |>
+      filter(scientific_name %in% as.character(cpue_change_yoy$facet)) |>
       mutate(
         group = factor(
           hypoxia_rank,
@@ -658,7 +684,8 @@ cpue_plot_yoy <- ggplot() +
   scale_colour_brewer(palette = "Set2", name = "Hypoxia impact") + 
   xlab("Time period") +
   ylab("CPUE") +
-  facet_wrap( ~ facet, scales = "free")
+  facet_wrap( ~ facet, scales = "free", ncol = 3) +
+  theme(legend.position = "bottom")
 
 # plot percentage change by species
 pc_change <- flood_impacts |> 
@@ -671,7 +698,8 @@ pc_change <- flood_impacts |>
     pc_change = 100 * (predicted_after - predicted_before) / predicted_before
   ) |>
   left_join(spp_to_plot, by = c("facet" = "scientific_name", "group" = "hypoxia_rank")) |>
-  filter(include)
+  filter(include) |>
+  mutate(facet = species_lookup[as.character(facet)])
   
 pc_plot_all <- pc_change |>
   mutate(
@@ -690,7 +718,10 @@ pc_plot_all <- pc_change |>
   xlab("Species") +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single")) +
   scale_fill_brewer(palette = "Set2", name = "Hypoxia impact") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom"
+  )
 
 # repeat for YOY
 pc_change_yoy <- flood_impacts_yoy |> 
@@ -703,7 +734,8 @@ pc_change_yoy <- flood_impacts_yoy |>
     pc_change = 100 * (predicted_after - predicted_before) / predicted_before
   ) |>
   left_join(spp_to_plot_yoy, by = c("facet" = "scientific_name", "group" = "hypoxia_rank")) |>
-  filter(include)
+  filter(include) |>
+  mutate(facet = species_lookup[as.character(facet)])
 
 pc_plot_yoy <- pc_change_yoy |>
   mutate(
@@ -722,15 +754,18 @@ pc_plot_yoy <- pc_change_yoy |>
   xlab("Species") +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single")) +
   scale_fill_brewer(palette = "Set2", name = "Hypoxia impact") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom"
+  )
 
 # save figs
 ggsave(
   filename = "outputs/figures/cpue-all.png",
   plot = cpue_plot_all,
   device = ragg::agg_png,
-  width = 10,
-  height = 8,
+  width = 8,
+  height = 10,
   units = "in",
   dpi = 600
 )
@@ -739,7 +774,7 @@ ggsave(
   plot = cpue_plot_yoy,
   device = ragg::agg_png,
   width = 8,
-  height = 6,
+  height = 5,
   units = "in",
   dpi = 600
 )
@@ -748,7 +783,7 @@ ggsave(
   plot = pc_plot_all,
   device = ragg::agg_png,
   width = 8,
-  height = 6,
+  height = 8,
   units = "in",
   dpi = 600
 )
@@ -757,7 +792,7 @@ ggsave(
   plot = pc_plot_yoy,
   device = ragg::agg_png,
   width = 8,
-  height = 6,
+  height = 8,
   units = "in",
   dpi = 600
 )
@@ -796,7 +831,8 @@ pc_change_spatial <- flood_impacts_spatial |>
     spp_to_plot_spatial,
     by = c("facet" = "scientific_name", "panel" = "waterbody", "group" = "hypoxia_rank")
   ) |>
-  filter(include)
+  filter(include) |>
+  mutate(facet = species_lookup[as.character(facet)])
 pc_plot_spatial_all <- pc_change_spatial |>
   mutate(
     group = factor(
@@ -821,7 +857,7 @@ pc_plot_spatial_all <- pc_change_spatial |>
 spp_to_plot_spatial_yoy <- flood_data_ba |>
   filter(!is.na(yoy)) |>
   group_by(scientific_name, waterbody, hypoxia_rank) |>
-  summarise(include = n() >= 5) |>
+  summarise(include = sum(yoy) > 1) |>
   ungroup() |>
   complete(scientific_name, waterbody, hypoxia_rank, fill = list(include = FALSE))
 pc_change_spatial_yoy <- flood_impacts_yoy_spatial |> 
@@ -834,10 +870,11 @@ pc_change_spatial_yoy <- flood_impacts_yoy_spatial |>
     pc_change = 100 * (predicted_after - predicted_before) / predicted_before
   ) |>
   left_join(
-    spp_to_plot_spatial,
+    spp_to_plot_spatial_yoy,
     by = c("facet" = "scientific_name", "panel" = "waterbody", "group" = "hypoxia_rank")
   ) |>
-  filter(include)
+  filter(include) |>
+  mutate(facet = species_lookup[as.character(facet)])
 pc_plot_spatial_yoy <- pc_change_spatial_yoy |>
   mutate(
     group = factor(
@@ -867,7 +904,7 @@ pc_plot_spatial_all_v2a <- pc_change_spatial |>
       labels = c("Low", "Medium", "High")
     )
   ) |>
-  filter(facet %in% c("Cyprinus carpio", "Perca fluviatilis", "Salmo trutta")) |>
+  filter(facet %in% c("Common Carp", "European Perch", "Brown Trout")) |>
   ggplot(aes(
     x = panel,
     y = pc_change, 
@@ -887,7 +924,7 @@ pc_plot_spatial_all_v2b <- pc_change_spatial |>
       labels = c("Low", "Medium", "High")
     )
   ) |>
-  filter(!facet %in% c("Cyprinus carpio", "Perca fluviatilis", "Salmo trutta")) |>
+  filter(!facet %in% c("Common Carp", "European Perch", "Brown Trout")) |>
   ggplot(aes(
     x = panel,
     y = pc_change, 
@@ -907,7 +944,7 @@ pc_plot_spatial_yoy_v2a <- pc_change_spatial_yoy |>
       labels = c("Low", "Medium", "High")
     )
   ) |>
-  filter(facet %in% c("Cyprinus carpio", "Perca fluviatilis", "Salmo trutta")) |>
+  filter(facet %in% c("Common Carp", "European Perch", "Brown Trout")) |>
   ggplot(aes(
     x = panel,
     y = pc_change, 
@@ -928,7 +965,7 @@ pc_plot_spatial_yoy_v2b <- pc_change_spatial_yoy |>
       labels = c("Low", "Medium", "High")
     )
   ) |>
-  filter(!facet %in% c("Cyprinus carpio", "Perca fluviatilis", "Salmo trutta")) |>
+  filter(!facet %in% c("Common Carp", "European Perch", "Brown Trout")) |>
   ggplot(aes(
     x = panel,
     y = pc_change, 
@@ -1038,3 +1075,259 @@ percent_change_table <- bind_rows(percent_change_table_all, percent_change_table
   arrange(species, waterbody, hypoxia_impact, stage)
 write.csv(percent_change_table, file = "outputs/tables/percent_change_all_categories.csv")
 write.csv(percent_change_table |> filter(recorded), file = "outputs/tables/percent_change_observed_categories.csv")
+
+# present this info in a map
+watercourse_lm <- fetch_table("hy_watercourse_lm", schema = "spatial", collect = TRUE)
+# spatial_cma <- fetch_table("cma100", schema = "spatial", collect = TRUE)
+spatial_basin <- fetch_table("basin100", schema = "spatial", collect = TRUE)
+
+# and basic outlines of Vic/Aus  
+vic_outline <- fetch_table("victoria_outline", schema = "spatial", collect = TRUE)
+
+# get fish site info
+survey_coords <- flood_data_ba |> fetch_site_info() |> collect()
+
+# load blackwater layer
+bw_spatial <- sf::read_sf("data/blackwater_areas/blackwater_areas.shp")
+
+# set geometries properly
+st_geometry(watercourse_lm) <- st_as_sfc(watercourse_lm$geom, crs = 4283)
+# st_geometry(spatial_cma) <- st_as_sfc(spatial_cma$geom, crs = 4283)
+st_geometry(spatial_basin) <- st_as_sfc(spatial_basin$geom, crs = 4283)
+st_geometry(vic_outline) <- st_as_sfc(vic_outline$geom, crs = 4283)
+st_geometry(survey_coords) <- st_as_sfc(survey_coords$geom_pnt, crs = 4283)
+
+# filter geofab to Victoria with a 5 km buffer
+vic_poly <- st_polygonize(vic_outline)
+vic_buffered <- vic_poly %>%
+  st_transform(7899) %>%
+  st_buffer(dist = 5000) %>%
+  st_transform(4283)
+watercourse_vic <- watercourse_lm %>%
+  st_filter(vic_buffered, .predicate = st_intersects)
+
+# add hypoxia ranks to survey coords so we can match pc_change with each site
+sb_native <- c(
+  "Melanotaenia fluviatilis",
+  "Retropinna semoni"
+)
+lb_native <- c(
+  "Bidyanus bidyanus",
+  "Maccullochella peelii",
+  "Macquaria ambigua",
+  "Macquaria australasica",
+  "Maccullochella macquariensis",
+  "Gadopsis bispinosis",
+  "Gadopsis marmoratus"
+)
+pc_change_map <- survey_coords |>
+  mutate(id_site = as.integer(id_site)) |>
+  left_join(
+    flood_data_ba |> 
+      distinct(id_site, hypoxia_rank) |>
+      mutate(id_site = as.integer(as.character(id_site))),
+    by = "id_site"
+  ) |>
+  left_join(
+    pc_change_spatial |> 
+      filter(include) |> 
+      select(group, facet, panel, pc_change),
+    by = c("hypoxia_rank" = "group", "waterbody" = "panel"),
+    relationship = "many-to-many"
+  ) |>
+  mutate(
+    species_group = as.character(facet),
+    species_group = ifelse(species_group %in% sb_native, "Small-bodied native", species_group),
+    species_group = ifelse(species_group %in% lb_native, "Large-bodied native", species_group)
+  )
+
+# average over all species in each group
+pc_change_map <- pc_change_map |>
+  select(waterbody, id_site, geometry, hypoxia_rank, species_group, pc_change) |>
+  group_by(waterbody, id_site, geometry, hypoxia_rank, species_group) |>
+  summarise(pc_change = mean(pc_change, na.rm = TRUE)) |>
+  ungroup()
+
+# plot all sites
+watercourse_surveyed <- watercourse_vic |>
+  filter(
+    grepl(
+      paste(
+        pc_change_map |>
+          mutate(waterbody = gsub(" River| Creek| Creeks| Lagoon| Swamp| Lake", "", waterbody)) |>
+          pull(waterbody) |>
+          unique(), 
+        collapse = "|"
+      ),
+      name, 
+      ignore.case = TRUE
+    )
+  )
+pc_change_map_lb_native <- vic_outline %>% 
+  ggplot() + 
+  geom_sf() + 
+  geom_sf(data = spatial_basin) + 
+  geom_sf(data = watercourse_surveyed, size = 1) +
+  geom_sf(data = bw_spatial, col = "#276419", fill = "#276419", alpha = 0.5) +
+  geom_sf(
+    data = pc_change_map |> 
+      filter(species_group == "Large-bodied native") |>
+      mutate(
+        scaled_pc_change = abs(pc_change),
+        scaled_pc_change = scaled_pc_change - min(scaled_pc_change, na.rm = TRUE),
+        scaled_pc_change = scaled_pc_change / max(scaled_pc_change, na.rm = TRUE),
+        scaled_pc_change = 0.9 + (scaled_pc_change / 5)
+      ),
+    aes(fill = pc_change, size = scaled_pc_change),
+    shape = 21, 
+  ) +
+  annotation_scale(location = "bl") +
+  annotation_north_arrow(
+    location = "bl", 
+    which_north = "true", 
+    pad_x = unit(0.05, "in"), 
+    pad_y = unit(0.25, "in"),
+    style = north_arrow_fancy_orienteering
+  ) +
+  scale_fill_gradientn(
+    colours = c(
+      "#67001F",
+      "#B2182B",
+      "#D6604D",
+      # "#F4A582",
+      # "#FDDBC7",
+      "#F7F7F7",
+      "#D1E5F0",
+      "#92C5DE",
+      "#4393C3",
+      "#2166AC",
+      "#053061"
+    ), 
+    values = scales::rescale(c(-100, -50, -10, 0, 50, 100, 300, 500, 1000)),
+    name = "Percentage change in CPUE",
+    limits = c(-100, 1000)
+  ) +
+  scale_size(name = "", guide = "none") +
+  theme(legend.position = "bottom")
+pc_change_map_sb_native <- vic_outline %>% 
+  ggplot() + 
+  geom_sf() + 
+  geom_sf(data = spatial_basin) + 
+  geom_sf(data = watercourse_surveyed, size = 1) +
+  geom_sf(data = bw_spatial, col = "#276419", fill = "#276419", alpha = 0.5) +
+  geom_sf(
+    data = pc_change_map |> 
+      filter(species_group == "Small-bodied native") |>
+      mutate(
+        scaled_pc_change = abs(pc_change),
+        scaled_pc_change = scaled_pc_change - min(scaled_pc_change, na.rm = TRUE),
+        scaled_pc_change = scaled_pc_change / max(scaled_pc_change, na.rm = TRUE),
+        scaled_pc_change = 0.9 + (scaled_pc_change / 5)
+      ),
+    aes(fill = pc_change, size = scaled_pc_change),
+    shape = 21, 
+  ) +
+  annotation_scale(location = "bl") +
+  annotation_north_arrow(
+    location = "bl", 
+    which_north = "true", 
+    pad_x = unit(0.05, "in"), 
+    pad_y = unit(0.25, "in"),
+    style = north_arrow_fancy_orienteering
+  ) +
+  scale_fill_gradientn(
+    colours = c(
+      "#67001F",
+      "#B2182B",
+      "#D6604D",
+      # "#F4A582",
+      # "#FDDBC7",
+      "#F7F7F7",
+      "#D1E5F0",
+      "#92C5DE",
+      "#4393C3",
+      "#2166AC",
+      "#053061"
+    ), 
+    values = scales::rescale(c(-100, -50, -10, 0, 50, 100, 300, 500, 1000)),
+    name = "Percentage change in CPUE",
+    limits = c(-100, 1000)
+  ) +
+  scale_size(name = "", guide = "none") +
+  theme(legend.position = "bottom")
+pc_change_map_carp <- vic_outline %>% 
+  ggplot() + 
+  geom_sf() + 
+  geom_sf(data = spatial_basin) + 
+  geom_sf(data = watercourse_surveyed, size = 1) +
+  geom_sf(data = bw_spatial, col = "#276419", fill = "#276419", alpha = 0.5) +
+  geom_sf(
+    data = pc_change_map |> 
+      filter(species_group == "Cyprinus carpio") |>
+      mutate(
+        scaled_pc_change = abs(pc_change),
+        scaled_pc_change = scaled_pc_change - min(scaled_pc_change, na.rm = TRUE),
+        scaled_pc_change = scaled_pc_change / max(scaled_pc_change, na.rm = TRUE),
+        scaled_pc_change = 0.9 + (scaled_pc_change / 5)
+      ),
+    aes(fill = pc_change, size = scaled_pc_change),
+    shape = 21, 
+  ) +
+  annotation_scale(location = "bl") +
+  annotation_north_arrow(
+    location = "bl", 
+    which_north = "true", 
+    pad_x = unit(0.05, "in"), 
+    pad_y = unit(0.25, "in"),
+    style = north_arrow_fancy_orienteering
+  ) +
+  scale_fill_gradientn(
+    colours = c(
+      "#67001F",
+      "#B2182B",
+      "#D6604D",
+      # "#F4A582",
+      # "#FDDBC7",
+      "#F7F7F7",
+      "#D1E5F0",
+      "#92C5DE",
+      "#4393C3",
+      "#2166AC",
+      "#053061"
+    ), 
+    values = scales::rescale(c(-100, -50, -10, 0, 50, 100, 300, 500, 1000)),
+    name = "Percentage change in CPUE",
+    limits = c(-100, 1000)
+  ) +
+  scale_size(name = "", guide = "none") +
+  theme(legend.position = "bottom")
+
+# save to file
+ggsave(
+  file = "outputs/figures/mapped-pc-change-lb-native.png",
+  plot = pc_change_map_lb_native,
+  device = ragg::agg_png,
+  width = 8,
+  height = 8,
+  units = "in",
+  res = 600
+)
+ggsave(
+  file = "outputs/figures/mapped-pc-change-sb-native.png",
+  plot = pc_change_map_sb_native,
+  device = ragg::agg_png,
+  width = 8,
+  height = 8,
+  units = "in",
+  res = 600
+)
+ggsave(
+  file = "outputs/figures/mapped-pc-change-carp.png",
+  plot = pc_change_map_carp,
+  device = ragg::agg_png,
+  width = 8,
+  height = 8,
+  units = "in",
+  res = 600
+)
+

@@ -4,6 +4,7 @@
 populate_recruit_data <- function(flood_data_table, recruit_table) {
   
   site_sp_table <- recruit_table |> 
+    ungroup() |>
     distinct(id_site, scientific_name) |>
     mutate(base_val = 0)
 
